@@ -1,4 +1,4 @@
-# DELAUNCHER - A decentralized launchpad
+# DELAUNCHER - A Decentralized Launchpad 🚀
 
 
 
