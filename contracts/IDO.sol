@@ -5,14 +5,7 @@ contract IDO {
     address public owner;
     mapping(address => uint256) public balances;
 
-
-
     constructor(address _owner) {
         owner = _owner;
-        
     }
-
-
-
-
 }
