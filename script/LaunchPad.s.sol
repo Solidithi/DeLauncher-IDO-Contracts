@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "../src/LaunchPad.sol";
+import "../contracts/LaunchPad.sol";
 import {Script, console2} from "forge-std/Script.sol";
 
 contract DeployLaunchpad is Script {

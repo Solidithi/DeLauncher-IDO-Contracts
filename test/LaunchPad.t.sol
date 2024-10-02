@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2, stdError} from "forge-std/Test.sol";
-import {Launchpad} from "../src/LaunchPad.sol";
+import {Launchpad} from "../contracts/LaunchPad.sol";
 
 contract LaunchpadTest is Test {
     Launchpad public launchpad;
