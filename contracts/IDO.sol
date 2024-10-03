@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 contract IDO {
     struct Project {
-        address tokenAddress;
+        IERC20 tokenAddress;
         uint256 tokenSupply;
         uint256 fund;
         uint256 pricePerToken;
@@ -49,7 +51,6 @@ contract IDO {
     error tokenPriceMustBePositive();
     error tokenSupplyMustBePositive();
     error fundMustBePositive();
-    error tokenAddressMustBeValid();
 
     /**
      * @dev contract deployer will put up a new project
@@ -58,7 +59,7 @@ contract IDO {
      */
     function addProject(
         uint256 _projectId,
-        address _tokenAddress,
+        IERC20 _tokenAddress,
         uint256 _tokenSupply,
         uint256 _fund,
         uint256 _startTime,
@@ -151,7 +152,7 @@ contract IDO {
     /**
      * @dev view functions
      * @param _projectId the project id number
-     * @param _address the corresponding address for that project id
+     * @param _address the user adr that check for whitelisted or not on the corresponding project
      */
     function isWhitelisted(
         uint256 _projectId,
