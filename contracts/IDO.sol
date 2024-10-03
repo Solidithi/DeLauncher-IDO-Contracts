@@ -108,4 +108,8 @@ contract IDO {
     ) public view returns (bool) {
         return whitelistedAddresses[_projectId][_address];
     }
+
+    function isProjectActive(uint256 _projectId) public view returns (bool) {
+        return (block.timestamp > projects[_projectId].endTime);
+    }
 }
