@@ -16,7 +16,7 @@ contract IDO {
 
     address public owner;
     mapping(address => mapping(uint256 => uint256)) public balances;
-    mapping(uint256 => mapping(address => bool)) private whitelistedAddresses;
+    mapping(uint256 => mapping(address => bool)) private whitelistedAddresses; // need to fix
     mapping(uint256 => Project) public projects;
     mapping(uint256 => address) public projectOwners;
 
@@ -36,6 +36,7 @@ contract IDO {
         uint256 indexed projectId,
         uint256 indexed amount
     );
+    event ProjectWithdrawn(address indexed user, uint256 indexed projectId);
 
     constructor() {
         owner = msg.sender;
@@ -112,6 +113,17 @@ contract IDO {
             _endTime
         );
         currentProjectID++;
+    }
+
+    function withdraw(uint256 _projectId) public onlyProjectOwner(_projectId) {
+        require(
+            block.timestamp > projects[_projectId].endTime,
+            "Project is still active"
+        );
+        uint256 projectRaisedAmount = projects[_projectId].raisedAmount;
+        payable(msg.sender).transfer(projectRaisedAmount);
+        projects[_projectId].fund = 0;
+        emit ProjectWithdrawn(msg.sender, _projectId);
     }
 
     /**
