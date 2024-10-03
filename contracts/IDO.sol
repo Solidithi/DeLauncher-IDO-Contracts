@@ -8,8 +8,6 @@ contract IDO {
         uint256 tokenPrice;
         uint256 startTime;
         uint256 endTime;
-        uint256 softCap;
-        bool isActive;
         WhiteList whitelist;
     }
 
@@ -29,7 +27,11 @@ contract IDO {
     event Whitelisted(address indexed user, uint256 indexed projectId);
     event ProjectCreated(
         uint256 indexed projectId,
-        address indexed tokenAddress
+        address indexed tokenAddress,
+        uint256 tokenSupply,
+        uint256 tokenPrice,
+        uint256 start,
+        uint256 end
     );
 
     constructor() {
@@ -43,10 +45,30 @@ contract IDO {
 
     function addProject(
         uint256 _projectId,
-        Project memory _project
+        address _tokenAddress,
+        uint256 _tokenSupply,
+        uint256 _tokenPrice,
+        uint256 _startTime,
+        uint256 _endTime
     ) public onlyOwner {
-        projects[_projectId] = _project;
-        emit ProjectCreated(_projectId, _project.tokenAddress);
+        Project memory newProject = Project({
+            tokenAddress: _tokenAddress,
+            tokenSupply: _tokenSupply,
+            tokenPrice: _tokenPrice,
+            startTime: _startTime,
+            endTime: _endTime,
+            whitelist: WhiteList({startTime: 0, endTime: 0})
+        });
+        projects[_projectId] = newProject;
+
+        emit ProjectCreated(
+            _projectId,
+            _tokenAddress,
+            _tokenSupply,
+            _tokenPrice,
+            _startTime,
+            _endTime
+        );
     }
 
     function createWhiteList(
@@ -61,6 +83,7 @@ contract IDO {
     }
 
     function signUpForWhitelist(uint256 _projectId) public {
+        require(projects[_projectId].startTime != 0, "Project does not exist");
         require(
             block.timestamp >= projects[_projectId].whitelist.startTime,
             "Whitelist registration not started yet"
