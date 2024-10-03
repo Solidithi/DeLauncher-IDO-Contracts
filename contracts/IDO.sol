@@ -29,7 +29,7 @@ contract IDO {
 
     event Whitelisted(address indexed user, uint256 indexed projectId);
     event ProjectCreated(
-        address indexed tokenAddress,
+        IERC20 indexed tokenAddress,
         uint256 tokenSupply,
         uint256 fund,
         uint256 pricePerToken,
@@ -76,6 +76,7 @@ contract IDO {
             tokenAddress: _tokenAddress,
             tokenSupply: _tokenSupply,
             fund: _fund,
+            pricePerToken: 0,
             startTime: _startTime,
             endTime: _endTime,
             whitelist: WhiteList({WLStartTime: 0, WLEndTime: 0})
@@ -83,7 +84,7 @@ contract IDO {
         projects[_projectId] = newProject;
 
         uint256 tokenPrice = calcTokenPrice(_projectId);
-        if(tokenPrice <= 0) {
+        if (tokenPrice <= 0) {
             revert tokenPriceMustBePositive();
         }
 
@@ -145,8 +146,8 @@ contract IDO {
      * @dev this function calculate listing price of project token
      * @param _projectId the project id number
      */
-    function calcTokenPrice(uint256 _projectId) public view returns (uint256){
-        return projects[_projectId].fund / projects[_projectId].tokenSupply
+    function calcTokenPrice(uint256 _projectId) public view returns (uint256) {
+        return projects[_projectId].fund / projects[_projectId].tokenSupply;
     }
 
     /**
