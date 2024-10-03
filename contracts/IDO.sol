@@ -123,7 +123,7 @@ contract IDO {
      * @param _projectId the project id
      */
     function signUpForWhitelist(uint256 _projectId) public {
-        if (_projectId > currentProjectID) {
+        if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
         require(
@@ -153,7 +153,7 @@ contract IDO {
      * @param _projectId the project id number
      */
     function calcTokenPrice(uint256 _projectId) public view returns (uint256) {
-        if (_projectId > currentProjectID) {
+        if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
         return projects[_projectId].fund / projects[_projectId].tokenSupply;
@@ -168,14 +168,14 @@ contract IDO {
         uint256 _projectId,
         address _address
     ) public view returns (bool) {
-        if (_projectId > currentProjectID) {
+        if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
         return whitelistedAddresses[_projectId][_address];
     }
 
     function isProjectActive(uint256 _projectId) public view returns (bool) {
-        if (_projectId > currentProjectID) {
+        if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
 
