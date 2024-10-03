@@ -10,10 +10,11 @@ contract IDO {
         uint256 startTime;
         uint256 endTime;
         uint256 whiteListCap;
+        uint256 raisedAmount;
     }
 
     address public owner;
-    mapping(address => uint256) public balances;
+    mapping(address => mapping(uint256 => uint256)) public balances;
     mapping(uint256 => mapping(address => bool)) private whitelistedAddresses;
     mapping(uint256 => Project) public projects;
     mapping(uint256 => address) public projectOwners;
@@ -87,7 +88,8 @@ contract IDO {
             pricePerToken: 0,
             startTime: _startTime,
             endTime: _endTime,
-            whiteListCap: _whiteListCap
+            whiteListCap: _whiteListCap,
+            raisedAmount: 0
         });
 
         projects[currentProjectID] = newProject;
@@ -111,6 +113,9 @@ contract IDO {
         currentProjectID++;
     }
 
+    /**
+     * @dev temp solution before we intergrated Bifrost
+     */
     function investProject(uint256 _projectId) public payable {
         if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
@@ -124,9 +129,8 @@ contract IDO {
             "Project has ended"
         );
 
-        projects[_projectId].fund += msg.value;
-
-        balances[msg.sender] += msg.value;
+        projects[_projectId].raisedAmount += msg.value;
+        balances[msg.sender][_projectId] += msg.value;
 
         emit Invested(msg.sender, _projectId, msg.value);
     }
@@ -241,6 +245,8 @@ contract IDO {
         if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
-        return projects[_projectId].investedAmounts[_userAdr]; // not implement yet
+        uint256 investedAmount = balances[_userAdr][_projectId];
+        require(investedAmount > 0, "User  has not invested in this project");
+        return investedAmount;
     }
 }
