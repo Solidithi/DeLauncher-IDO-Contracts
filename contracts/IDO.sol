@@ -32,8 +32,8 @@ contract IDO {
         address indexed tokenAddress
     );
 
-    constructor(address _owner) {
-        owner = _owner;
+    constructor() {
+        owner = msg.sender;
     }
 
     modifier onlyOwner() {
