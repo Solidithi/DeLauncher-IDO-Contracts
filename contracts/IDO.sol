@@ -5,7 +5,8 @@ contract IDO {
     struct Project {
         address tokenAddress;
         uint256 tokenSupply;
-        uint256 tokenPrice;
+        uint256 fund;
+        uint256 pricePerToken;
         uint256 startTime;
         uint256 endTime;
         WhiteList whitelist;
@@ -26,12 +27,12 @@ contract IDO {
 
     event Whitelisted(address indexed user, uint256 indexed projectId);
     event ProjectCreated(
-        uint256 indexed projectId,
         address indexed tokenAddress,
         uint256 tokenSupply,
-        uint256 tokenPrice,
-        uint256 start,
-        uint256 end
+        uint256 fund,
+        uint256 pricePerToken,
+        uint256 startTime,
+        uint256 endTime
     );
 
     constructor() {
@@ -52,25 +53,27 @@ contract IDO {
         uint256 _projectId,
         address _tokenAddress,
         uint256 _tokenSupply,
-        uint256 _tokenPrice,
+        uint256 _fund,
         uint256 _startTime,
         uint256 _endTime
     ) public onlyOwner {
         Project memory newProject = Project({
             tokenAddress: _tokenAddress,
             tokenSupply: _tokenSupply,
-            tokenPrice: _tokenPrice,
+            fund: _fund,
             startTime: _startTime,
             endTime: _endTime,
             whitelist: WhiteList({WLStartTime: 0, WLEndTime: 0})
         });
         projects[_projectId] = newProject;
 
+        newProject.pricePerToken = calcTokenPrice(_projectId);
+
         emit ProjectCreated(
-            _projectId,
             _tokenAddress,
             _tokenSupply,
-            _tokenPrice,
+            _fund,
+            newProject.pricePerToken,
             _startTime,
             _endTime
         );
@@ -116,6 +119,14 @@ contract IDO {
         whitelistedAddresses[_projectId][msg.sender] = true;
 
         emit Whitelisted(msg.sender, _projectId);
+    }
+
+    /**
+     * @dev this function calculate listing price of project token
+     * @param _projectId the project id number
+     */
+    function calcTokenPrice(uint256 _projectId) public view returns (uint256){
+        return projects[_projectId].fund / projects[_projectId].tokenSupply
     }
 
     /**
