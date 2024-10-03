@@ -29,6 +29,11 @@ contract IDO {
         uint256 startTime,
         uint256 endTime
     );
+    event Invested(
+        address indexed user,
+        uint256 indexed projectId,
+        uint256 indexed amount
+    );
 
     constructor() {
         owner = msg.sender;
@@ -104,6 +109,26 @@ contract IDO {
             _endTime
         );
         currentProjectID++;
+    }
+
+    function investProject(uint256 _projectId) public payable {
+        if (_projectId > currentProjectID || _projectId < 0) {
+            revert invalidProjectID();
+        }
+        require(
+            projects[_projectId].tokenAddress != address(0),
+            "Project does not exist"
+        );
+        require(
+            block.timestamp < projects[_projectId].endTime,
+            "Project has ended"
+        );
+
+        projects[_projectId].fund += msg.value;
+
+        balances[msg.sender] += msg.value;
+
+        emit Invested(msg.sender, _projectId, msg.value);
     }
 
     /**
