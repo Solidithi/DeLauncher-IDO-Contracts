@@ -24,8 +24,7 @@ contract IDO {
     mapping(uint256 => mapping(address => bool)) private whitelistedAddresses;
     mapping(uint256 => Project) public projects;
 
-    uint256 public whitelistStartTime;
-    uint256 public whitelistEndTime;
+    uint256 currentProjectID = 0;
 
     event Whitelisted(address indexed user, uint256 indexed projectId);
     event ProjectCreated(
@@ -58,7 +57,6 @@ contract IDO {
      * @param _endTime project launcchpad end time
      */
     function addProject(
-        uint256 _projectId,
         IERC20 _tokenAddress,
         uint256 _tokenSupply,
         uint256 _fund,
@@ -81,9 +79,9 @@ contract IDO {
             endTime: _endTime,
             whitelist: WhiteList({WLStartTime: 0, WLEndTime: 0})
         });
-        projects[_projectId] = newProject;
+        projects[currentProjectID] = newProject;
 
-        uint256 tokenPrice = calcTokenPrice(_projectId);
+        uint256 tokenPrice = calcTokenPrice(currentProjectID);
         if (tokenPrice <= 0) {
             revert tokenPriceMustBePositive();
         }
@@ -98,6 +96,7 @@ contract IDO {
             _startTime,
             _endTime
         );
+        currentProjectID++;
     }
 
     /**
