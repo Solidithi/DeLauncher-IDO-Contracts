@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 contract IDO {
     struct Project {
-        IERC20 tokenAddress;
+        address tokenAddress;
         uint256 tokenSupply;
         uint256 fund;
         uint256 pricePerToken;
@@ -28,7 +26,7 @@ contract IDO {
 
     event Whitelisted(address indexed user, uint256 indexed projectId);
     event ProjectCreated(
-        IERC20 indexed tokenAddress,
+        address indexed tokenAddress,
         uint256 tokenSupply,
         uint256 fund,
         uint256 pricePerToken,
@@ -58,12 +56,13 @@ contract IDO {
      * @param _endTime project launcchpad end time
      */
     function addProject(
-        IERC20 _tokenAddress,
+        address _tokenAddress,
         uint256 _tokenSupply,
         uint256 _fund,
         uint256 _startTime,
         uint256 _endTime
     ) public onlyOwner {
+        require(_tokenAddress != address(0), "Token address need to exist");
         if (_tokenSupply <= 0) {
             revert tokenSupplyMustBePositive();
         }
@@ -127,7 +126,7 @@ contract IDO {
             revert invalidProjectID();
         }
         require(
-            projects[_projectId].tokenAddress != IERC20(address(0)),
+            projects[_projectId].tokenAddress != address(0),
             "Project does not exist"
         );
         require(
