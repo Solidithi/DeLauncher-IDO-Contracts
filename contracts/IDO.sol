@@ -43,6 +43,13 @@ contract IDO {
         require(msg.sender == owner, "Caller is not the owner");
         _;
     }
+    /**
+     * @dev contract errors
+     */
+    error tokenPriceMustBePositive();
+    error tokenSupplyMustBePositive();
+    error fundMustBePositive();
+    error tokenAddressMustBeValid();
 
     /**
      * @dev contract deployer will put up a new project
@@ -57,6 +64,13 @@ contract IDO {
         uint256 _startTime,
         uint256 _endTime
     ) public onlyOwner {
+        if (_tokenSupply <= 0) {
+            revert tokenSupplyMustBePositive();
+        }
+        if (_fund <= 0) {
+            revert fundMustBePositive();
+        }
+
         Project memory newProject = Project({
             tokenAddress: _tokenAddress,
             tokenSupply: _tokenSupply,
@@ -67,13 +81,18 @@ contract IDO {
         });
         projects[_projectId] = newProject;
 
-        newProject.pricePerToken = calcTokenPrice(_projectId);
+        uint256 tokenPrice = calcTokenPrice(_projectId);
+        if(tokenPrice <= 0) {
+            revert tokenPriceMustBePositive();
+        }
+
+        newProject.pricePerToken = tokenPrice;
 
         emit ProjectCreated(
             _tokenAddress,
             _tokenSupply,
             _fund,
-            newProject.pricePerToken,
+            tokenPrice,
             _startTime,
             _endTime
         );
