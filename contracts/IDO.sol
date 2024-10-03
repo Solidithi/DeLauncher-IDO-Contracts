@@ -50,6 +50,7 @@ contract IDO {
     error tokenPriceMustBePositive();
     error tokenSupplyMustBePositive();
     error fundMustBePositive();
+    error invalidProjectID();
 
     /**
      * @dev contract deployer will put up a new project
@@ -122,6 +123,9 @@ contract IDO {
      * @param _projectId the project id
      */
     function signUpForWhitelist(uint256 _projectId) public {
+        if (_projectId > currentProjectID) {
+            revert invalidProjectID();
+        }
         require(
             projects[_projectId].tokenAddress != IERC20(address(0)),
             "Project does not exist"
@@ -149,6 +153,9 @@ contract IDO {
      * @param _projectId the project id number
      */
     function calcTokenPrice(uint256 _projectId) public view returns (uint256) {
+        if (_projectId > currentProjectID) {
+            revert invalidProjectID();
+        }
         return projects[_projectId].fund / projects[_projectId].tokenSupply;
     }
 
@@ -161,10 +168,17 @@ contract IDO {
         uint256 _projectId,
         address _address
     ) public view returns (bool) {
+        if (_projectId > currentProjectID) {
+            revert invalidProjectID();
+        }
         return whitelistedAddresses[_projectId][_address];
     }
 
     function isProjectActive(uint256 _projectId) public view returns (bool) {
+        if (_projectId > currentProjectID) {
+            revert invalidProjectID();
+        }
+
         return (block.timestamp > projects[_projectId].endTime);
     }
 }
