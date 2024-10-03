@@ -12,8 +12,8 @@ contract IDO {
     }
 
     struct WhiteList {
-        uint256 startTime;
-        uint256 endTime;
+        uint256 WLStartTime;
+        uint256 WLEndTime;
     }
 
     address public owner;
@@ -43,6 +43,11 @@ contract IDO {
         _;
     }
 
+    /**
+     * @dev contract deployer will put up a new project
+     * @param _startTime project launchpad start time
+     * @param _endTime project launcchpad end time
+     */
     function addProject(
         uint256 _projectId,
         address _tokenAddress,
@@ -57,7 +62,7 @@ contract IDO {
             tokenPrice: _tokenPrice,
             startTime: _startTime,
             endTime: _endTime,
-            whitelist: WhiteList({startTime: 0, endTime: 0})
+            whitelist: WhiteList({WLStartTime: 0, WLEndTime: 0})
         });
         projects[_projectId] = newProject;
 
@@ -71,6 +76,13 @@ contract IDO {
         );
     }
 
+    /**
+     * @dev contract deployer can put a whitelist event for a specific project
+     * @dev temp solution
+     * @dev #todo discuss later
+     * @param _startTime whitelist end time
+     * @param _endTime whitelist start time
+     */
     function createWhiteList(
         uint256 _projectId,
         uint256 _startTime,
@@ -78,18 +90,22 @@ contract IDO {
     ) public onlyOwner {
         require(_startTime < _endTime, "invalid whitelist period");
 
-        projects[_projectId].whitelist.startTime = _startTime;
-        projects[_projectId].whitelist.endTime = _endTime;
+        projects[_projectId].whitelist.WLStartTime = _startTime;
+        projects[_projectId].whitelist.WLEndTime = _endTime;
     }
 
+    /**
+     * @dev public function, everyone can sign up for whitelist
+     * @param _projectId the project id
+     */
     function signUpForWhitelist(uint256 _projectId) public {
         require(projects[_projectId].startTime != 0, "Project does not exist");
         require(
-            block.timestamp >= projects[_projectId].whitelist.startTime,
+            block.timestamp >= projects[_projectId].whitelist.WLStartTime,
             "Whitelist registration not started yet"
         );
         require(
-            block.timestamp <= projects[_projectId].whitelist.endTime,
+            block.timestamp <= projects[_projectId].whitelist.WLEndTime,
             "Whitelist registration has ended"
         );
         require(
@@ -102,6 +118,11 @@ contract IDO {
         emit Whitelisted(msg.sender, _projectId);
     }
 
+    /**
+     * @dev view functions
+     * @param _projectId the project id number
+     * @param _address the corresponding address for that project id
+     */
     function isWhitelisted(
         uint256 _projectId,
         address _address
