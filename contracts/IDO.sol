@@ -82,7 +82,7 @@ contract IDO {
         });
         projects[currentProjectID] = newProject;
 
-        uint256 tokenPrice = calcTokenPrice(currentProjectID);
+        uint256 tokenPrice = getProjectTokenPrice(currentProjectID);
         if (tokenPrice <= 0) {
             revert tokenPriceMustBePositive();
         }
@@ -152,7 +152,9 @@ contract IDO {
      * @dev this function calculate listing price of project token
      * @param _projectId the project id number
      */
-    function calcTokenPrice(uint256 _projectId) public view returns (uint256) {
+    function getProjectTokenPrice(
+        uint256 _projectId
+    ) public view returns (uint256) {
         if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
@@ -174,11 +176,49 @@ contract IDO {
         return whitelistedAddresses[_projectId][_address];
     }
 
+    function getProjectFullDetails(
+        uint256 _projectId
+    ) public view returns (Project memory) {
+        if (_projectId > currentProjectID || _projectId < 0) {
+            revert invalidProjectID();
+        }
+        return projects[_projectId];
+    }
+
+    function getProjectTokenSupply(
+        uint256 _projectId
+    ) public view returns (uint256) {
+        if (_projectId > currentProjectID || _projectId < 0) {
+            revert invalidProjectID();
+        }
+        return projects[_projectId].tokenSupply;
+    }
+
+    function getProjectFund(uint256 _projectId) public view returns (uint256) {
+        if (_projectId > currentProjectID || _projectId < 0) {
+            revert invalidProjectID();
+        }
+        return projects[_projectId].fund;
+    }
+
     function isProjectActive(uint256 _projectId) public view returns (bool) {
         if (_projectId > currentProjectID || _projectId < 0) {
             revert invalidProjectID();
         }
 
         return (block.timestamp > projects[_projectId].endTime);
+    }
+
+    function getTimeLeftUntilProjecctEnd(
+        uint256 _projectId
+    ) public view returns (uint256) {
+        if (_projectId > currentProjectID || _projectId < 0) {
+            revert invalidProjectID();
+        }
+        return projects[_projectId].endTime - block.timestamp;
+    }
+
+    function getCurrentProjectId() public view returns (uint256) {
+        return currentProjectID;
     }
 }
