@@ -123,7 +123,10 @@ contract IDO {
      * @param _projectId the project id
      */
     function signUpForWhitelist(uint256 _projectId) public {
-        require(projects[_projectId].startTime != 0, "Project does not exist");
+        require(
+            projects[_projectId].tokenAddress != IERC20(address(0)),
+            "Project does not exist"
+        );
         require(
             block.timestamp >= projects[_projectId].whitelist.WLStartTime,
             "Whitelist registration not started yet"
