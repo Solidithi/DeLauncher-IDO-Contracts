@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 contract IDO {
     struct Project {
+        address projectOwner;
         address tokenAddress;
         uint256 tokenSupply;
         uint256 fund;
@@ -82,6 +83,7 @@ contract IDO {
         }
 
         Project memory newProject = Project({
+            projectOwner: msg.sender,
             tokenAddress: _tokenAddress,
             tokenSupply: _tokenSupply,
             fund: _fund,
@@ -93,7 +95,6 @@ contract IDO {
         });
 
         projects[currentProjectID] = newProject;
-        projectOwners[currentProjectID] = msg.sender;
 
         uint256 tokenPrice = getProjectTokenPrice(currentProjectID);
         if (tokenPrice <= 0) {
