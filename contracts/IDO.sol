@@ -9,18 +9,14 @@ contract IDO {
         uint256 pricePerToken;
         uint256 startTime;
         uint256 endTime;
-        WhiteList whitelist;
-    }
-
-    struct WhiteList {
-        uint256 WLStartTime;
-        uint256 WLEndTime;
+        uint256 whiteListCap;
     }
 
     address public owner;
     mapping(address => uint256) public balances;
     mapping(uint256 => mapping(address => bool)) private whitelistedAddresses;
     mapping(uint256 => Project) public projects;
+    mapping(uint256 => address) public projectOwners;
 
     uint256 currentProjectID = 0;
 
@@ -42,6 +38,14 @@ contract IDO {
         require(msg.sender == owner, "Caller is not the owner");
         _;
     }
+
+    modifier onlyProjectOwner(uint256 _projectId) {
+        require(
+            msg.sender == projectOwners[_projectId],
+            "Caller is not the project owner"
+        );
+        _;
+    }
     /**
      * @dev contract errors
      */
@@ -60,8 +64,9 @@ contract IDO {
         uint256 _tokenSupply,
         uint256 _fund,
         uint256 _startTime,
-        uint256 _endTime
-    ) public onlyOwner {
+        uint256 _endTime,
+        uint256 _whiteListCap
+    ) public {
         require(_tokenAddress != address(0), "Token address need to exist");
         if (_tokenSupply <= 0) {
             revert tokenSupplyMustBePositive();
@@ -77,9 +82,11 @@ contract IDO {
             pricePerToken: 0,
             startTime: _startTime,
             endTime: _endTime,
-            whitelist: WhiteList({WLStartTime: 0, WLEndTime: 0})
+            whiteListCap: _whiteListCap
         });
+
         projects[currentProjectID] = newProject;
+        projectOwners[currentProjectID] = msg.sender;
 
         uint256 tokenPrice = getProjectTokenPrice(currentProjectID);
         if (tokenPrice <= 0) {
@@ -100,25 +107,8 @@ contract IDO {
     }
 
     /**
-     * @dev contract deployer can put a whitelist event for a specific project
-     * @dev temp solution
-     * @dev #todo discuss later
-     * @param _startTime whitelist end time
-     * @param _endTime whitelist start time
-     */
-    function createWhiteList(
-        uint256 _projectId,
-        uint256 _startTime,
-        uint256 _endTime
-    ) public onlyOwner {
-        require(_startTime < _endTime, "invalid whitelist period");
-
-        projects[_projectId].whitelist.WLStartTime = _startTime;
-        projects[_projectId].whitelist.WLEndTime = _endTime;
-    }
-
-    /**
      * @dev public function, everyone can sign up for whitelist
+     * @dev temp solution until intergrating Bifrost
      * @param _projectId the project id
      */
     function signUpForWhitelist(uint256 _projectId) public {
@@ -130,16 +120,14 @@ contract IDO {
             "Project does not exist"
         );
         require(
-            block.timestamp >= projects[_projectId].whitelist.WLStartTime,
-            "Whitelist registration not started yet"
-        );
-        require(
-            block.timestamp <= projects[_projectId].whitelist.WLEndTime,
-            "Whitelist registration has ended"
-        );
-        require(
             !isWhitelisted(_projectId, msg.sender),
             "Already whitelisted for this project"
+        );
+
+        uint256 investedAmount = getInvestedAmount(msg.sender, _projectId);
+        require(
+            investedAmount >= projects[_projectId].whiteListCap,
+            "Insufficient investment"
         );
 
         whitelistedAddresses[_projectId][msg.sender] = true;
@@ -219,5 +207,15 @@ contract IDO {
 
     function getCurrentProjectId() public view returns (uint256) {
         return currentProjectID;
+    }
+
+    function getInvestedAmount(
+        address _userAdr,
+        uint256 _projectId
+    ) public view returns (uint256) {
+        if (_projectId > currentProjectID || _projectId < 0) {
+            revert invalidProjectID();
+        }
+        return projects[_projectId].investedAmounts[_userAdr]; // not implement yet
     }
 }
