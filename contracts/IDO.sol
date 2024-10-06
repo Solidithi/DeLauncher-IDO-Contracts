@@ -10,6 +10,8 @@ contract IDO {
         uint256 startTime;
         uint256 endTime;
         uint256 raisedAmount;
+        uint256 minInvest;
+        uint256 maxInvest;
     }
 
     address public owner;
@@ -61,13 +63,16 @@ contract IDO {
             projects[_projectId].tokenAddress != address(0),
             "Invalid token address"
         );
+        _;
+    }
+
+    modifier IDOStillAvailable(uint256 _projectId) {
         require(
             block.timestamp < projects[_projectId].endTime,
             "Project IDO has ended"
         );
         _;
     }
-
     /**
      * @dev contract errors
      */
@@ -85,7 +90,9 @@ contract IDO {
         uint256 _tokenForSale,
         uint256 _pricePerToken,
         uint256 _startTime,
-        uint256 _endTime
+        uint256 _endTime,
+        uint256 _minInvest,
+        uint256 _maxInvest
     ) public {
         require(_tokenAddress != address(0), "Token address need to exist");
         if (_tokenForSale <= 0) {
@@ -99,7 +106,9 @@ contract IDO {
             pricePerToken: _pricePerToken,
             startTime: _startTime,
             endTime: _endTime,
-            raisedAmount: 0
+            raisedAmount: 0,
+            minInvest: _minInvest,
+            maxInvest: _maxInvest
         });
 
         projects[currentProjectID] = newProject;
@@ -130,41 +139,41 @@ contract IDO {
      */
     function investProject(
         uint256 _projectId
-    ) public payable validProject(_projectId) {
+    ) public payable validProject(_projectId) IDOStillAvailable(_projectId) {
         projects[_projectId].raisedAmount += msg.value;
         balances[msg.sender][_projectId] += msg.value;
 
         emit Invested(msg.sender, _projectId, msg.value);
     }
 
-    /**
-     * @dev public function, everyone can sign up for whitelist
-     * @dev temp solution until intergrating Bifrost
-     * @dev invest and whitelist must be in a same function
-     * @param _projectId the project id
-     */
-    // function signUpForWhitelist(
-    //     uint256 _projectId
-    // ) public validProject(_projectId) {
-    //     require(
-    //         projects[_projectId].tokenAddress != address(0),
-    //         "Project does not exist"
-    //     );
-    //     require(
-    //         !isWhitelisted(_projectId, msg.sender),
-    //         "Already whitelisted for this project"
-    //     );
+    // /**
+    //  * @dev public function, everyone can sign up for whitelist
+    //  * @dev temp solution until intergrating Bifrost
+    //  * @dev invest and whitelist must be in a same function
+    //  * @param _projectId the project id
+    //  */
+    // // function signUpForWhitelist(
+    // //     uint256 _projectId
+    // // ) public validProject(_projectId) {
+    // //     require(
+    // //         projects[_projectId].tokenAddress != address(0),
+    // //         "Project does not exist"
+    // //     );
+    // //     require(
+    // //         !isWhitelisted(_projectId, msg.sender),
+    // //         "Already whitelisted for this project"
+    // //     );
 
-    //     uint256 investedAmount = getInvestedAmount(msg.sender, _projectId);
-    //     require(
-    //         investedAmount >= projects[_projectId].whiteListCap,
-    //         "Insufficient investment"
-    //     );
+    // //     uint256 investedAmount = getInvestedAmount(msg.sender, _projectId);
+    // //     require(
+    // //         investedAmount >= projects[_projectId].whiteListCap,
+    // //         "Insufficient investment"
+    // //     );
 
-    //     whitelistedAddresses[_projectId][msg.sender] = true;
+    // //     whitelistedAddresses[_projectId][msg.sender] = true;
 
-    //     emit Whitelisted(msg.sender, _projectId);
-    // }
+    // //     emit Whitelisted(msg.sender, _projectId);
+    // // }
 
     /**
      * @dev view functions
