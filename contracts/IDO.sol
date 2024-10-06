@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 contract IDO {
     struct Project {
+        uint256 projectId;
         address projectOwner;
         address tokenAddress;
         uint256 tokenForSale;
@@ -117,6 +118,7 @@ contract IDO {
         }
 
         Project memory newProject = Project({
+            projectId: currentProjectID,
             projectOwner: msg.sender,
             tokenAddress: _tokenAddress,
             tokenForSale: _tokenForSale,
@@ -138,6 +140,8 @@ contract IDO {
             _startTime,
             _endTime
         );
+
+        currentProjectID++;
     }
 
     function withdraw(uint256 _projectId) public onlyProjectOwner(_projectId) {
