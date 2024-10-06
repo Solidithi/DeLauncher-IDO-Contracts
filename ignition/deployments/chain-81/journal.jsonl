@@ -1,0 +1,7 @@
+
+{"chainId":81,"type":"DEPLOYMENT_INITIALIZE"}
+{"artifactId":"Contract#IDO","contractAddress":"0x9c0BF7CBfd599A017Ad76e28eBd094BC7F47F1c2","contractName":"IDO","dependencies":[],"futureId":"Contract#IDO","futureType":"NAMED_ARTIFACT_CONTRACT_AT","strategy":"basic","strategyConfig":{},"type":"CONTRACT_AT_EXECUTION_STATE_INITIALIZE"}
+{"args":[],"artifactId":"Contract#IDO","contractAddress":"0x9c0BF7CBfd599A017Ad76e28eBd094BC7F47F1c2","dependencies":["Contract#IDO"],"from":"0x86fc854bd2ada85c398e8aa3085d1a5069ba738d","functionName":"getDeployer","futureId":"Contract#IDO.getDeployer","nameOrIndex":0,"strategy":"basic","strategyConfig":{},"type":"STATIC_CALL_EXECUTION_STATE_INITIALIZE"}
+{"futureId":"Contract#IDO.getDeployer","networkInteraction":{"data":"0x72630531","from":"0x86fc854bd2ada85c398e8aa3085d1a5069ba738d","id":1,"to":"0x9c0BF7CBfd599A017Ad76e28eBd094BC7F47F1c2","type":"STATIC_CALL","value":{"_kind":"bigint","value":"0"}},"type":"NETWORK_INTERACTION_REQUEST"}
+{"futureId":"Contract#IDO.getDeployer","networkInteractionId":1,"result":{"customErrorReported":false,"returnData":"0x00000000000000000000000086fc854bd2ada85c398e8aa3085d1a5069ba738d","success":true},"type":"STATIC_CALL_COMPLETE"}
+{"futureId":"Contract#IDO.getDeployer","result":{"type":"SUCCESS","value":"0x86FC854bd2ADA85C398e8aA3085D1a5069Ba738D"},"type":"STATIC_CALL_EXECUTION_STATE_COMPLETE"}

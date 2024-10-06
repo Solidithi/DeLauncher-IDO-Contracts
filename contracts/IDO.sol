@@ -251,4 +251,8 @@ contract IDO {
     ) public view validProject(_projectId) returns (uint256) {
         return projects[_projectId].minInvest / 2;
     }
+
+    function getDeployer() public view returns (address) {
+        return owner;
+    }
 }
