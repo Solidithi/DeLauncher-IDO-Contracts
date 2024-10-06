@@ -73,6 +73,23 @@ contract IDO {
         );
         _;
     }
+
+    modifier needToBeWhitelisted(address _investor, uint256 _projectId) {
+        require(
+            whitelistedAddresses[_projectId][_investor],
+            "Investor is not whitelisted"
+        );
+        _;
+    }
+
+    modifier notWhitelisted(address _investor, uint256 _projectId) {
+        require(
+            !whitelistedAddresses[_projectId][_investor],
+            "Investor is already whitelisted"
+        );
+        _;
+    }
+
     /**
      * @dev contract errors
      */
@@ -139,41 +156,42 @@ contract IDO {
      */
     function investProject(
         uint256 _projectId
-    ) public payable validProject(_projectId) IDOStillAvailable(_projectId) {
+    )
+        public
+        payable
+        validProject(_projectId)
+        IDOStillAvailable(_projectId)
+        needToBeWhitelisted(msg.sender, _projectId)
+    {
         projects[_projectId].raisedAmount += msg.value;
         balances[msg.sender][_projectId] += msg.value;
 
         emit Invested(msg.sender, _projectId, msg.value);
     }
 
-    // /**
-    //  * @dev public function, everyone can sign up for whitelist
-    //  * @dev temp solution until intergrating Bifrost
-    //  * @dev invest and whitelist must be in a same function
-    //  * @param _projectId the project id
-    //  */
-    // // function signUpForWhitelist(
-    // //     uint256 _projectId
-    // // ) public validProject(_projectId) {
-    // //     require(
-    // //         projects[_projectId].tokenAddress != address(0),
-    // //         "Project does not exist"
-    // //     );
-    // //     require(
-    // //         !isWhitelisted(_projectId, msg.sender),
-    // //         "Already whitelisted for this project"
-    // //     );
+    function joinWhitelist(
+        uint256 _projectId
+    )
+        public
+        payable
+        validProject(_projectId)
+        IDOStillAvailable(_projectId)
+        notWhitelisted(msg.sender, _projectId)
+    {
+        require(
+            msg.value >= getReserveInvestment(_projectId),
+            "Minimum reserve amount not reach"
+        );
+        require(
+            msg.value <= projects[_projectId].maxInvest,
+            "Reserve amount must lower than max investment cap"
+        );
+        projects[_projectId].raisedAmount += msg.value;
+        balances[msg.sender][_projectId] += msg.value;
 
-    // //     uint256 investedAmount = getInvestedAmount(msg.sender, _projectId);
-    // //     require(
-    // //         investedAmount >= projects[_projectId].whiteListCap,
-    // //         "Insufficient investment"
-    // //     );
-
-    // //     whitelistedAddresses[_projectId][msg.sender] = true;
-
-    // //     emit Whitelisted(msg.sender, _projectId);
-    // // }
+        whitelistedAddresses[_projectId][msg.sender] = true;
+        emit Whitelisted(msg.sender, _projectId);
+    }
 
     /**
      * @dev view functions
@@ -222,5 +240,11 @@ contract IDO {
         uint256 investedAmount = balances[_userAdr][_projectId];
         require(investedAmount > 0, "User  has not invested in this project");
         return investedAmount;
+    }
+
+    function getReserveInvestment(
+        uint256 _projectId
+    ) public view validProject(_projectId) returns (uint256) {
+        return projects[_projectId].minInvest / 2;
     }
 }
