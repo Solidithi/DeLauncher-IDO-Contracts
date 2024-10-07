@@ -7,6 +7,7 @@ dotenv.config();
 
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "http://localhost:8545";
 const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY || "0x";
+const SHIBUYA_PRIVATE_KEY = process.env.SHIBUYA_PRIVATE_KEY || "0x";
 
 const config: HardhatUserConfig = {
   solidity: "0.8.24",
@@ -18,6 +19,11 @@ const config: HardhatUserConfig = {
       chainId: 11155111,
       url: SEPOLIA_RPC_URL,
       accounts: [SEPOLIA_PRIVATE_KEY],
+    },
+    shibuya: {
+      url: "https://evm.shibuya.astar.network",
+      chainId: 81,
+      accounts: [SHIBUYA_PRIVATE_KEY],
     }
   },
 
