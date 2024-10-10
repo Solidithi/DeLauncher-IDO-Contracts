@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.24;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract IDO is Ownable {
-
     struct Project {
         uint256 projectId;
         address projectOwner;
@@ -15,39 +14,39 @@ contract IDO is Ownable {
         uint256 startTime;
         uint256 endTime;
         uint256 raisedAmount;
-		// The maximum monetary worth of fund that the project can raise
-		uint256 hardCapAmount;
-		// The minimum monetary worth of fund that the project must raise
-		uint256 softCapAmount;
-		// The minimum monetary value of an individual's investment
+        // The maximum monetary worth of fund that the project can raise
+        uint256 hardCapAmount;
+        // The minimum monetary worth of fund that the project must raise
+        uint256 softCapAmount;
+        // The minimum monetary value of an individual's investment
         uint256 minInvest;
-		// The maximum monetary value of an individual's investment
+        // The maximum monetary value of an individual's investment
         uint256 maxInvest;
-		// vAssets that project accepts
-		address[] acceptedVAssets;
+        // vAssets that project accepts
+        address[] acceptedVAssets;
     }
 
-	// Proposal: add decimals to handle smaller units than USD, e.g.: cents
-	uint256 public constant DECIMALS = 2;
+    // Proposal: add decimals to handle smaller units than USD, e.g.: cents
+    uint256 public constant DECIMALS = 2;
 
-	// Address of Bifrost SLPX contract
-	address public slpxAddress;
+    // Address of Bifrost SLPX contract
+    address public slpxAddress;
 
     // address public owner;
-    mapping(address => mapping(uint256 => uint256)) public balances;
+    mapping(address => mapping(uint256 => uint256)) private balances;
     mapping(uint256 => mapping(address => bool)) private whitelistedAddresses;
     mapping(uint256 => Project) public projects;
     // mapping(uint256 => address) public projectOwners; // 🔥 This is not needed
 
-	/**
-	 * 
-	 * @notice This map exists for the purpose of quickly checking
-	 * whether a project supports particular vAsset
-	 * 
-	 * @dev This mapping could be viewed as:	
-	 * maping(vAssetAddress => mapping(projectId => true/false))
-	 */
-	mapping(uint256 => mapping(address => bool)) acceptedVAssets;
+    /**
+     *
+     * @notice This map exists for the purpose of quickly checking
+     * whether a project supports particular vAsset
+     *
+     * @dev This mapping could be viewed as:
+     * maping(vAssetAddress => mapping(projectId => true/false))
+     */
+    mapping(uint256 => mapping(address => bool)) acceptedVAssets;
 
     uint256 currentProjectID = 1;
 
@@ -67,15 +66,13 @@ contract IDO is Ownable {
     );
     event ProjectWithdrawn(address indexed user, uint256 indexed projectId);
 
-    constructor(
-		address _slpxAddress
-	) Ownable(msg.sender) {
-		// Already inherits OpenZeppelin's Ownable contract 🔥
+    constructor(address _slpxAddress) Ownable(msg.sender) {
+        // Already inherits OpenZeppelin's Ownable contract 🔥
         // owner = msg.sender;
-		slpxAddress = _slpxAddress;
+        slpxAddress = _slpxAddress;
     }
 
-	// 🔥 Already inherits this func from OpenZeppelin's Ownable contract
+    // 🔥 Already inherits this func from OpenZeppelin's Ownable contract
     // modifier onlyOwner() {
     //     require(msg.sender == owner, "Caller is not the owner");
     //     _;
@@ -94,20 +91,19 @@ contract IDO is Ownable {
             revert invalidProjectID();
         }
 
-		// 🔥 No need to check 'projects[_projectId].tokenAddress != address(0)' here
-		// if (projects[_projectId].tokenAddress == address(0)) {
-		// 	revert ZeroAddress();
-		// }
+        // 🔥 No need to check 'projects[_projectId].tokenAddress != address(0)' here
+        // if (projects[_projectId].tokenAddress == address(0)) {
+        // 	revert ZeroAddress();
+        // }
         _;
     }
 
-	modifier notZeroAddress(address a) {
-		if (a == address(0)) {
-			revert ZeroAddress();
+    modifier notZeroAddress(address a) {
+        if (a == address(0)) {
+            revert ZeroAddress();
             _;
-		}
-	}
-
+        }
+    }
 
     modifier IDOStillAvailable(uint256 _projectId) {
         require(
@@ -139,8 +135,8 @@ contract IDO is Ownable {
     error tokenPriceMustBePositive();
     error tokenForSaleMustBePositive();
     error invalidProjectID();
-	error ZeroAddress();
-	error VAssetNotAcceptedByProject();
+    error ZeroAddress();
+    error VAssetNotAcceptedByProject();
 
     /**
      * @dev contract deployer will put up a new project
@@ -155,10 +151,10 @@ contract IDO is Ownable {
         uint256 _endTime,
         uint256 _minInvest,
         uint256 _maxInvest,
-		uint256 _hardCapAmount,
-		uint256 _softCapAmount,
-		address[] memory _acceptedVAssets
-    ) notZeroAddress(_tokenAddress) public {
+        uint256 _hardCapAmount,
+        uint256 _softCapAmount,
+        address[] memory _acceptedVAssets
+    ) public notZeroAddress(_tokenAddress) {
         if (_tokenForSale <= 0) {
             revert tokenForSaleMustBePositive();
         }
@@ -174,15 +170,15 @@ contract IDO is Ownable {
             raisedAmount: 0,
             minInvest: _minInvest,
             maxInvest: _maxInvest,
-			hardCapAmount: _hardCapAmount,
-			softCapAmount: _softCapAmount,
-			acceptedVAssets: _acceptedVAssets
+            hardCapAmount: _hardCapAmount,
+            softCapAmount: _softCapAmount,
+            acceptedVAssets: _acceptedVAssets
         });
 
-		for (uint256 i = 0; i < _acceptedVAssets.length; i++) {
-			address vAsset = _acceptedVAssets[i];
-			acceptedVAssets[currentProjectID][vAsset] = true;
-		}
+        for (uint256 i = 0; i < _acceptedVAssets.length; i++) {
+            address vAsset = _acceptedVAssets[i];
+            acceptedVAssets[currentProjectID][vAsset] = true;
+        }
 
         projects[currentProjectID] = newProject;
 
@@ -227,55 +223,50 @@ contract IDO is Ownable {
     //     emit Invested(msg.sender, _projectId, msg.value);
     // }
 
-	function investProject (
-		uint256 projectId,
-		address vAssetAddress,
-		uint256 amount
-	)
-		public 
-		validProject(projectId)
-		IDOStillAvailable(projectId)
-		needToBeWhitelisted(msg.sender, projectId) 
-	{
- 
-		/**
-		 * @dev cache msg.sender and address(this) once 
-		 * to limit reading from state too many
-		 */
-		address investor = msg.sender;
-		address contractAddr = address(this);
+    function investProject(
+        uint256 projectId,
+        address vAssetAddress,
+        uint256 amount
+    )
+        public
+        validProject(projectId)
+        IDOStillAvailable(projectId)
+        needToBeWhitelisted(msg.sender, projectId)
+    {
+        /**
+         * @dev cache msg.sender and address(this) once
+         * to limit reading from state too many
+         */
+        address investor = msg.sender;
+        address contractAddr = address(this);
 
-		// Check if vAsset is accepted by project
-		bool vAssetAccepted = isVAssetAcceptedByProject(
-			vAssetAddress,
-			projectId
-		);
-		if (!vAssetAccepted) {
-			revert VAssetNotAcceptedByProject();
-		}
+        // Check if vAsset is accepted by project
+        bool vAssetAccepted = isVAssetAcceptedByProject(
+            vAssetAddress,
+            projectId
+        );
+        if (!vAssetAccepted) {
+            revert VAssetNotAcceptedByProject();
+        }
 
-		// Check vAsset allowance
-		require(
-			IERC20(vAssetAddress).allowance(investor, address(this)) >= amount,
-			"user not sufficiently approve vAsset for IDO"
-		);
-		
-		IERC20(vAssetAddress).transferFrom(
-            investor,
-            contractAddr,
-            amount
+        // Check vAsset allowance
+        require(
+            IERC20(vAssetAddress).allowance(investor, address(this)) >= amount,
+            "user not sufficiently approve vAsset for IDO"
         );
 
-		// Check monetary constraints:
-		// call XCM Oracle contract to know the amount of token (X) equivalent to user's vToken amount
-		// gets the price of X in USDT or USD using data from an Oracle
-		// // calc. the monetary value of the investment (vAsset price * amount)
-		// // Get project's fund raised amount (FRA)
-		// // make sure FRA + invest amount <= project's hardcap 
-		// // check if it is >= minInvest && <= maxInvest
+        IERC20(vAssetAddress).transferFrom(investor, contractAddr, amount);
 
-		// Update states
-	}
+        // Check monetary constraints:
+        // call XCM Oracle contract to know the amount of token (X) equivalent to user's vToken amount
+        // gets the price of X in USDT or USD using data from an Oracle
+        // // calc. the monetary value of the investment (vAsset price * amount)
+        // // Get project's fund raised amount (FRA)
+        // // make sure FRA + invest amount <= project's hardcap
+        // // check if it is >= minInvest && <= maxInvest
+
+        // Update states
+    }
 
     function joinWhitelist(
         uint256 _projectId
@@ -325,11 +316,11 @@ contract IDO is Ownable {
         return projects[_projectId].hardCapAmount;
     }
 
-	function getProjectSoftCapAmount(
-		uint256 _projectId
-	) public view validProject(_projectId) returns (uint256) {
-		return projects[_projectId].softCapAmount;
-	}
+    function getProjectSoftCapAmount(
+        uint256 _projectId
+    ) public view validProject(_projectId) returns (uint256) {
+        return projects[_projectId].softCapAmount;
+    }
 
     function isProjectActive(
         uint256 _projectId
@@ -337,12 +328,12 @@ contract IDO is Ownable {
         return (block.timestamp > projects[_projectId].endTime);
     }
 
-	function isVAssetAcceptedByProject(
-		address vAssetAddress,
-		uint256 projectId
-	) public view returns (bool) {
-		return acceptedVAssets[projectId][vAssetAddress];
-	}
+    function isVAssetAcceptedByProject(
+        address vAssetAddress,
+        uint256 projectId
+    ) public view returns (bool) {
+        return acceptedVAssets[projectId][vAssetAddress];
+    }
 
     function getTimeLeftUntilProjecctEnd(
         uint256 _projectId
@@ -369,18 +360,16 @@ contract IDO is Ownable {
         return projects[_projectId].minInvest / 2;
     }
 
-	/** 
-	 * 🔥 Since we switched to OpenZeppelin's Ownable contract,
-	 * the owner of the contract could be changed,
-	 * so the owner can be different from deployer
-	 */ 
+    /**
+     * 🔥 Since we switched to OpenZeppelin's Ownable contract,
+     * the owner of the contract could be changed,
+     * so the owner can be different from deployer
+     */
     // function getDeployer() public view returns (address) {
     //     return owner;
     // }
 
-	function setSlpxAddress(
-		address _slpxAddress
-	) public onlyOwner {
-		slpxAddress = _slpxAddress;
-	}
+    function setSlpxAddress(address _slpxAddress) public onlyOwner {
+        slpxAddress = _slpxAddress;
+    }
 }
