@@ -12,30 +12,30 @@ contract DoubleOracle is Ownable {
         ref = _ref;
     }
 
-    function getPrice() external view returns (uint256) {
+    function getPrice(
+        string memory _base,
+        string memory _quote
+    ) external view returns (uint256, uint256, uint256) {
         IStdReference.ReferenceData memory data = ref.getReferenceData(
-            "BTC",
-            "USD"
+            _base,
+            _quote
         );
-        return data.rate;
+        return (data.rate, data.lastUpdatedBase, data.lastUpdatedQuote);
     }
 
-    function getMultiPrices() external view returns (uint256[] memory) {
-        string[] memory baseSymbols = new string[](2);
-        baseSymbols[0] = "WBTC";
-        baseSymbols[1] = "DOT";
-
-        string[] memory quoteSymbols = new string[](2);
-        quoteSymbols[0] = "USD";
-        quoteSymbols[1] = "USDT";
+    function getPrices(
+        string[] memory _bases,
+        string[] memory _quotes
+    ) external view returns (uint256[] memory) {
         IStdReference.ReferenceData[] memory data = ref.getReferenceDataBulk(
-            baseSymbols,
-            quoteSymbols
+            _bases,
+            _quotes
         );
 
-        uint256[] memory prices = new uint256[](2);
-        prices[0] = data[0].rate;
-        prices[1] = data[1].rate;
+        uint256[] memory prices = new uint256[](_bases.length);
+        for (uint256 i = 0; i < _bases.length; i++) {
+            prices[i] = data[i].rate;
+        }
 
         return prices;
     }
