@@ -18,7 +18,7 @@ struct MockAccount {
 contract JoinWhiteListTest is Test {
     IDO ido;
     IDOTestUtil testUtil;
-    address mockSlpxAddr = address(0);
+    address mockSlpxAddr = address(0x01);
 
     constructor() {
         testUtil = new IDOTestUtil();
