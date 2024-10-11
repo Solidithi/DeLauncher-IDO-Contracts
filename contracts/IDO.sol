@@ -85,7 +85,7 @@ contract IDO is Ownable {
 
     modifier validProject(uint256 _projectId) {
         if (_projectId > currentProjectId || _projectId <= 0) {
-            revert invalidProjectID();
+            revert InvalidProjectId();
         }
         _;
     }
@@ -127,7 +127,7 @@ contract IDO is Ownable {
 	/**
 	 * @dev general errors
 	 */
-    error invalidProjectID();
+    error InvalidProjectId();
     error ZeroAddress();
 
 	/**
