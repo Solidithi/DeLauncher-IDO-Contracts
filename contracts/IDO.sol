@@ -193,7 +193,7 @@ contract IDO is Ownable {
 			revert InvalidProjectMinInvestment();
 		}
 		if (_startTime < block.timestamp
-		|| _startTime < _endTime) {
+		|| _startTime > _endTime) {
 			revert InvalidProjectTimeframe();
 		}	
 		
