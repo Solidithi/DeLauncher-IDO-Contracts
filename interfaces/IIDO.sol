@@ -6,16 +6,16 @@ interface IIDO {
 	 * 
 	 * @notice Project owner lists project on IDO
 	 * @notice access role: anyone
-	 * @param tokenAddress 
-	 * @param pricePerToken 
+	 * @param tokenAddress .
+	 * @param pricePerToken .
 	 * @param startTime project launchpad start time
 	 * @param endTime project launcchpad end time
-	 * @param minInvest 
-	 * @param maxInvest 
-	 * @param hardCapAmount 
-	 * @param softCapAmount 
-	 * @param rewardRate 
-	 * @param acceptedVAsset 
+	 * @param minInvest .
+	 * @param maxInvest .
+	 * @param hardCapAmount .
+	 * @param softCapAmount .
+	 * @param rewardRate .
+	 * @param acceptedVAsset .
 	 */
 	function addProject(
 		address tokenAddress,
@@ -28,7 +28,7 @@ interface IIDO {
         uint256 softCapAmount,
         uint256 rewardRate,
         address acceptedVAsset
-	) public;
+	) external;
 
 	/**
 	 * 
@@ -47,7 +47,7 @@ interface IIDO {
 	 * @notice this step requires user to deposit 50% of 
 	 * project's min. investment amount as a proof of engagement
 	 * @notice access role: anyone except project's owner
-	 * @param projectId 
+	 * @param projectId .
 	 */
 	function joinWhiteList(uint256 projectId) external;	
 
@@ -55,8 +55,8 @@ interface IIDO {
 	 * 
 	 * @notice invest vAsset in exchange of project token + reward
 	 * @notice access role: anyone
-	 * @param projectId 
-	 * @param amount 
+	 * @param projectId .
+	 * @param amount .
 	 */
 	function investProject(
 		uint256 projectId,
@@ -67,7 +67,7 @@ interface IIDO {
 	 * 
 	 * @notice investor withdraws the project tokens they purchased + reward
 	 * @notice access role: investor 
-	 * @param projectId 
+	 * @param projectId .
 	 */
 	function withdrawProjectTokens(uint256 projectId) external;
 }
