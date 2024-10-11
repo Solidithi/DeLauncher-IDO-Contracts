@@ -97,19 +97,20 @@ contract IDO is Ownable {
     	_;
     }
 
-    modifier IDOStillAvailable(uint256 _projectId) {
-        require(
-            block.timestamp < projects[_projectId].endTime,
-            "Project IDO has ended"
-        );
+    modifier IsInIDOTimeFrame(uint256 projectId) {
+		if (block.timestamp < projects[projectId].startTime) {
+			revert ProjectIDOHasNotStarted();
+		}
+		if (block.timestamp > projects[projectId].endTime) {
+			revert ProjectIDOHasEnded();
+		}
         _;
     }
 
     modifier needToBeWhitelisted(address _investor, uint256 _projectId) {
-        require(
-            whitelistedAddresses[_projectId][_investor],
-            "Investor is not whitelisted"
-        );
+		if(!whitelistedAddresses[_projectId][_investor]) {
+			revert UserNotWhitelisted();
+		}
         _;
     }
 
@@ -133,7 +134,6 @@ contract IDO is Ownable {
 	/**
 	 * @dev addProject errors
 	 */
-
 	error InvalidProjectSoftCap();
 	error InvalidProjectHardCap();
 	error InvalidProjectMinInvestment();
@@ -145,13 +145,21 @@ contract IDO is Ownable {
 	/**
 	 * @dev investProject errors
 	 */
-    error VAssetNotAcceptedByProject();
+	error UserNotWhitelisted();
+    // error VAssetNotAcceptedByProject();
 
 	/**
 	 * @dev joinWhitelist errors
 	 */
 	error AlreadyWhitelisted();	
-	error MinReserveAmountNotReached();
+	error NotEnoughERC20Allowance();
+	error ProjectIDOHasNotStarted();
+	error ProjectIDOHasEnded();
+
+	/**
+	 * @dev investProject errors
+	 */
+	// error NotEnoughERC20Allowance(); also use in investProject func.
 
 	////////////////////////////////////////////////////
 	//////////// TRANSACTIONAL FUNCTIONS //////////////
@@ -215,7 +223,7 @@ contract IDO is Ownable {
             rewardRate: _rewardRate
         });
 
-        projects[currentProjectId] = newProject;
+        projects[newProjectId] = newProject;
 
         emit ProjectCreated(
             _msgSender(),
@@ -246,7 +254,7 @@ contract IDO is Ownable {
     )
         public
         validProject(projectId)
-        IDOStillAvailable(projectId)
+        IsInIDOTimeFrame(projectId)
         needToBeWhitelisted(_msgSender(), projectId)
     {
         /**
@@ -291,7 +299,7 @@ contract IDO is Ownable {
     )
         external
         validProject(projectId)
-        IDOStillAvailable(projectId)
+        IsInIDOTimeFrame(projectId)
         // notWhitelisted(_msgSender(), _projectId) // replace with in-function check
     {
 		address investor = _msgSender();
@@ -305,7 +313,7 @@ contract IDO is Ownable {
 		address vAsset = getAcceptedVAsset(projectId);
 		uint256 reserveAmount = getReserveInvestment(projectId);
 		if (IERC20(vAsset).allowance(investor, IDOAddr) < reserveAmount) {
-			revert MinReserveAmountNotReached();
+			revert NotEnoughERC20Allowance();
 		}
 		IERC20(vAsset).transferFrom(investor, IDOAddr, reserveAmount);
 		
@@ -313,13 +321,12 @@ contract IDO is Ownable {
 		balances[investor][projectId] += reserveAmount;
 		whitelistedAddresses[projectId][investor] = true;
         projects[projectId].raisedAmount += reserveAmount;
-        balances[_msgSender()][projectId] += reserveAmount;
 
         emit Whitelisted(_msgSender(), projectId);
     }
 
 	////////////////////////////////////////////////////
-	//////////////// GETTERS FUNCTIONS ////////////////
+	//////////////// GETTER FUNCTIONS /////////////////
 	//////////////////////////////////////////////////
     /**
      * @dev view functions
@@ -346,11 +353,19 @@ contract IDO is Ownable {
         return projects[_projectId].hardCapAmount;
     }
 
+	function getProjectRaisedAmount(
+		uint256 projectId
+	) public view returns (uint256) {
+		return projects[projectId].raisedAmount;		
+	} 
+
     function getProjectSoftCapAmount(
         uint256 _projectId
     ) public view validProject(_projectId) returns (uint256) {
         return projects[_projectId].softCapAmount;
     }
+
+	// function
 
     function isProjectActive(
         uint256 _projectId
@@ -359,8 +374,8 @@ contract IDO is Ownable {
     }
 
     function isVAssetAcceptedByProject(
-        address vAssetAddress,
-        uint256 projectId
+        uint256 projectId,
+        address vAssetAddress
     ) public view returns (bool) {
 		return (projects[projectId].acceptedVAsset == vAssetAddress);
     }
@@ -376,11 +391,10 @@ contract IDO is Ownable {
     }
 
     function getInvestedAmount(
-        address _userAdr,
-        uint256 _projectId
+        uint256 _projectId,
+        address _userAdr
     ) public view validProject(_projectId) returns (uint256) {
         uint256 investedAmount = balances[_userAdr][_projectId];
-        require(investedAmount > 0, "User  has not invested in this project");
         return investedAmount;
     }
 
@@ -398,7 +412,7 @@ contract IDO is Ownable {
 	}
 	
 	////////////////////////////////////////////////////
-	//////////////// SETTERS FUNCTIONS ////////////////
+	//////////////// SETTER FUNCTIONS /////////////////
 	//////////////////////////////////////////////////
     function setSlpxAddress(address _slpxAddress) public onlyOwner {
         slpxAddress = _slpxAddress;
