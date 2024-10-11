@@ -290,7 +290,6 @@ contract IDO is Ownable {
         uint256 projectId
     )
         external
-        payable
         validProject(projectId)
         IDOStillAvailable(projectId)
         // notWhitelisted(_msgSender(), _projectId) // replace with in-function check
