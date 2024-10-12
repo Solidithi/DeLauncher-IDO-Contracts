@@ -161,6 +161,9 @@ contract IDO is Ownable, ReentrancyGuard {
      * @dev investProject errors
      */
     // error NotEnoughERC20Allowance(); also use in investProject func.
+    error MinInvestmentNotReached();
+    error MaxInvestmentExceeded();
+    error HardCapExceeded();
 
     ////////////////////////////////////////////////////
     //////////// TRANSACTIONAL FUNCTIONS //////////////
@@ -263,30 +266,43 @@ contract IDO is Ownable, ReentrancyGuard {
     {
         /**
          * @dev cache _msgSender() and address(this) once
-         * to limit reading from state too many
+         * to limit reading from states
          */
         address investor = _msgSender();
-        address contractAddr = address(this);
 
-        // Check vAsset allowance
-        address vAssetAddress = getAcceptedVAsset(projectId);
-        require(
-            IERC20(vAssetAddress).allowance(investor, address(this)) >= amount,
-            "user not sufficiently approve vAsset for IDO"
+        /**
+         * @notice check monetary constraint
+         */
+        Project memory project = getProjectFullDetails(projectId);
+        uint256 reserveAmount = getInvestedAmount(projectId, investor);
+        uint256 totalInvestAmount = reserveAmount + amount;
+
+        if (totalInvestAmount < project.minInvest) {
+            revert MinInvestmentNotReached();
+        }
+
+        if (totalInvestAmount > project.maxInvest) {
+            revert MaxInvestmentExceeded();
+        }
+
+        if (project.raisedAmount + totalInvestAmount > project.hardCapAmount) {
+            revert HardCapExceeded();
+        }
+
+        if (IERC20(project.acceptedVAsset).allowance(investor, address(this)) < amount) {
+            revert NotEnoughERC20Allowance();
+        }
+
+        // update states
+        balances[investor][projectId] += amount;
+        projects[projectId].raisedAmount += amount;
+
+        // interaction
+        IERC20(project.acceptedVAsset).transferFrom(
+            investor,
+            address(this),
+            amount
         );
-
-        IERC20(vAssetAddress).transferFrom(investor, contractAddr, amount);
-
-        // Check monetary constraints:
-        // call XCM Oracle contract to know the amount of token (X) equivalent to user's vToken amount
-        // swap
-        // gets the price of X in USDT or USD using data from an Oracle (like Band Protocol)
-        // // The price of X stands for how much the user's investment is worth in USD
-        // // Get project's fund raised amount (FRA)
-        // // check if X + FRA <= project's hardcap
-        // // check if X >= minInvest && X <= maxInvest
-
-        // Update states
     }
 
     /**
@@ -375,8 +391,6 @@ contract IDO is Ownable, ReentrancyGuard {
     ) public view validProject(_projectId) returns (uint256) {
         return projects[_projectId].softCapAmount;
     }
-
-    // function
 
     function isProjectActive(
         uint256 _projectId
