@@ -107,18 +107,17 @@ contract IDO is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier needToBeWhitelisted(address _investor, uint256 _projectId) {
-        if (!whitelistedAddresses[_projectId][_investor]) {
+    modifier needToBeWhitelisted(uint256 projectId, address investor) {
+        if (!whitelistedAddresses[projectId][investor]) {
             revert UserNotWhitelisted();
         }
         _;
     }
 
-    modifier notWhitelisted(address _investor, uint256 _projectId) {
-        require(
-            !whitelistedAddresses[_projectId][_investor],
-            "Investor is already whitelisted"
-        );
+    modifier notWhitelisted(uint256 projectId, address investor) {
+        if (!whitelistedAddresses[projectId][investor]) {
+			revert AlreadyWhitelisted();
+		}
         _;
     }
 
@@ -143,19 +142,12 @@ contract IDO is Ownable, ReentrancyGuard {
     error InvalidProjectTimeframe();
 
     /**
-     * @dev investProject errors
-     */
-    error UserNotWhitelisted();
-    // error VAssetNotAcceptedByProject();
-
-    /**
      * @dev joinWhitelist errors
      */
     error AlreadyWhitelisted();
     error NotEnoughERC20Allowance();
     error ProjectIDOHasNotStarted();
     error ProjectIDOHasEnded();
-    error CannotTransferMoneyToIDO();
 
     /**
      * @dev investProject errors
@@ -164,7 +156,12 @@ contract IDO is Ownable, ReentrancyGuard {
     error MinInvestmentNotReached();
     error MaxInvestmentExceeded();
     error HardCapExceeded();
+    error UserNotWhitelisted();
 
+    /**
+     * @dev _takeInvestorMoney errors
+     */
+    error ERC20TransferFailed();
     ////////////////////////////////////////////////////
     //////////// TRANSACTIONAL FUNCTIONS //////////////
     //////////////////////////////////////////////////
@@ -261,18 +258,12 @@ contract IDO is Ownable, ReentrancyGuard {
         public
         validProject(projectId)
         IsInIDOTimeFrame(projectId)
-        needToBeWhitelisted(_msgSender(), projectId)
+        needToBeWhitelisted(projectId, _msgSender())
         nonReentrant
     {
-        /**
-         * @dev cache _msgSender() and address(this) once
-         * to limit reading from states
-         */
-        address investor = _msgSender();
+		address investor = _msgSender();
 
-        /**
-         * @notice check monetary constraint
-         */
+		// check
         Project memory project = getProjectFullDetails(projectId);
         uint256 reserveAmount = getInvestedAmount(projectId, investor);
         uint256 totalInvestAmount = reserveAmount + amount;
@@ -289,20 +280,9 @@ contract IDO is Ownable, ReentrancyGuard {
             revert HardCapExceeded();
         }
 
-        if (IERC20(project.acceptedVAsset).allowance(investor, address(this)) < amount) {
-            revert NotEnoughERC20Allowance();
-        }
+		emit Invested(investor, projectId, amount);
 
-        // update states
-        balances[investor][projectId] += amount;
-        projects[projectId].raisedAmount += amount;
-
-        // interaction
-        IERC20(project.acceptedVAsset).transferFrom(
-            investor,
-            address(this),
-            amount
-        );
+		_takeInvestorMoneyForProject(projectId, investor, amount);
     }
 
     /**
@@ -322,33 +302,45 @@ contract IDO is Ownable, ReentrancyGuard {
         IsInIDOTimeFrame(projectId)
         nonReentrant
     {
-        address investor = _msgSender();
-        address IDOAddr = address(this);
+		address investor = _msgSender();
 
         if (whitelistedAddresses[projectId][investor]) {
             revert AlreadyWhitelisted();
         }
 
+        emit Whitelisted(_msgSender(), projectId);
+		whitelistedAddresses[projectId][investor] = true;
+
         // transfers reserve amount (50% of project's min investment) from investor to this contract
-        address vAsset = getAcceptedVAsset(projectId);
         uint256 reserveAmount = getReserveInvestment(projectId);
-        if (IERC20(vAsset).allowance(investor, IDOAddr) < reserveAmount) {
+        _takeInvestorMoneyForProject(projectId, _msgSender(), reserveAmount);
+    }
+
+    function _takeInvestorMoneyForProject(
+		uint256 projectId,
+        address investor,
+        uint256 amount
+    ) internal {
+		address vAsset = getAcceptedVAsset(projectId);
+		uint256 allowanceAmount = IERC20(vAsset).allowance(investor, address(this));	
+
+		// check
+        if (allowanceAmount < amount) {
             revert NotEnoughERC20Allowance();
         }
 
         // update states
-        balances[investor][projectId] += reserveAmount;
-        whitelistedAddresses[projectId][investor] = true;
-        projects[projectId].raisedAmount += reserveAmount;
+        balances[investor][projectId] += amount;
+        projects[projectId].raisedAmount += amount;
 
-        emit Whitelisted(_msgSender(), projectId);
+        // interactions
         bool success = IERC20(vAsset).transferFrom(
             investor,
-            IDOAddr,
-            reserveAmount
+            address(this),
+            amount
         );
         if (!success) {
-            revert CannotTransferMoneyToIDO();
+            revert ERC20TransferFailed();
         }
     }
 
@@ -374,16 +366,16 @@ contract IDO is Ownable, ReentrancyGuard {
         return projects[_projectId];
     }
 
-    function getProjectHardCapAmount(
-        uint256 _projectId
-    ) public view validProject(_projectId) returns (uint256) {
-        return projects[_projectId].hardCapAmount;
-    }
-
     function getProjectRaisedAmount(
         uint256 projectId
     ) public view returns (uint256) {
         return projects[projectId].raisedAmount;
+    }
+
+    function getProjectHardCapAmount(
+        uint256 _projectId
+    ) public view validProject(_projectId) returns (uint256) {
+        return projects[_projectId].hardCapAmount;
     }
 
     function getProjectSoftCapAmount(
@@ -391,6 +383,18 @@ contract IDO is Ownable, ReentrancyGuard {
     ) public view validProject(_projectId) returns (uint256) {
         return projects[_projectId].softCapAmount;
     }
+
+	function getProjectMinInvest(
+		uint256 projectId
+	) public view validProject(projectId) returns (uint256) {
+		return projects[projectId].minInvest;
+	}
+
+	function getProjectMaxInvest(
+		uint256 projectId
+	) public view validProject(projectId) returns (uint256) {
+		return projects[projectId].maxInvest;
+	}
 
     function isProjectActive(
         uint256 _projectId
