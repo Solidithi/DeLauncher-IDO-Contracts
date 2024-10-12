@@ -2,13 +2,13 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {IDO} from "../contracts/IDO.sol"; // Adjust the path to your contract
+import {IDO} from "../../contracts/IDO.sol"; // Adjust the path to your contract
 import {console} from "forge-std/console.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
-import {IDOTestUtil} from "../script/IDOTestUtil.s.sol";
+import {IDOTestUtil} from "../../script/IDOTestUtil.s.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {MockProjectToken} from "../script/IDOTestUtil.s.sol";
-import {MockVToken} from "../script/IDOTestUtil.s.sol";
+import {MockProjectToken} from "../../script/IDOTestUtil.s.sol";
+import {MockVToken} from "../../script/IDOTestUtil.s.sol";
 
 struct MockAccount {
     uint256 privateKey;
