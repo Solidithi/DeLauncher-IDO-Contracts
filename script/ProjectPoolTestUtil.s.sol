@@ -67,4 +67,23 @@ contract ProjectPoolTestUtil is Script {
 		address poolAddress = factory.getProjectPoolAddress(projectId);
 		return ProjectPool(poolAddress);
     }
+
+	function whitelistUser(ProjectPool pool, address user) public {
+		vm.startPrank(user);
+		address vAsset = pool.getAcceptedVAsset();
+        uint256 reserveAmount = pool.getReserveInvestment();
+        MockVToken(vAsset).freeMoneyForEveryone(user, reserveAmount);
+        MockVToken(vAsset).approve(address(pool), reserveAmount);
+		pool.joinWhitelist();
+		vm.stopPrank();
+	}
+
+	function userInvest(ProjectPool pool, address user, uint256 amount) public {
+		vm.startPrank(user);
+		address vAsset = pool.getAcceptedVAsset();
+        MockVToken(vAsset).freeMoneyForEveryone(user, amount);
+        MockVToken(vAsset).approve(address(pool), amount);
+		pool.investProject(amount);
+		vm.stopPrank();
+	}
 }
