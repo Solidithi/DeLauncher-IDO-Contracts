@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.20;
 
-import {IDO} from "../contracts/IDO.sol";
+import {ProjectPool} from "../contracts/ProjectPool.sol";
+import {ProjectPoolFactory} from "../contracts/ProjectPoolFactory.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
@@ -29,7 +29,7 @@ contract MockVToken is ERC20 {
 	}
 }
 
-contract IDOTestUtil is Script {
+contract ProjectPoolTestUtil is Script {
     MockProjectToken projectToken;
     MockVToken vToken;
 
@@ -39,7 +39,7 @@ contract IDOTestUtil is Script {
         vToken = new MockVToken();
     }
 
-    function addTestProject(IDO ido) public returns (IDO.Project memory) {
+    function createTestProjectPool(ProjectPoolFactory factory) public returns (ProjectPool) {
         address tokenAddress = address(projectToken); // Replace with actual token address
         uint256 projectTokenPrice = 1; // 1 project token is equal to exactly 1 vToken, for simplicity
         uint256 startTime = block.timestamp; // Start now
@@ -48,11 +48,11 @@ contract IDOTestUtil is Script {
         uint256 maxInvest = 1 * (10 ** vToken.decimals()); // Max invest: 1 vToken
         uint256 hardCapAmount = 10000 * (10 ** vToken.decimals()); // Hard cap: 10000 vTokens
         uint256 softCapAmount = 1 * (10 ** vToken.decimals()); // Soft cap: 10 vTokens
-        uint256 rewardRate = (1 * (10 ** ido.RATE_DECIMALS())) / 10; // 0.1 (10%) reward rate
+        uint256 rewardRate = (1 * (10 ** 4)) / 10; // 0.1 (10%) reward rate
         address acceptedVAsset = address(vToken); // Replace with actual vAsset address
 
         // Call the addProject function
-        ido.addProject(
+        uint256 projectId = factory.createProjectPool(
             tokenAddress,
             projectTokenPrice,
             startTime,
@@ -64,15 +64,7 @@ contract IDOTestUtil is Script {
             rewardRate,
             acceptedVAsset
         );
-
-        uint256 currPID = ido.getCurrentProjectId();
-        // Return the newly created project
-        return ido.getProjectFullDetails(currPID - 1); // Assuming the project ID is 1
-    }
-
-	// Trial run
-    function run() external {
-        IDO ido = new IDO(address(0));
-        addTestProject(ido);
+		address poolAddress = factory.getProjectPoolAddress(projectId);
+		return ProjectPool(poolAddress);
     }
 }
