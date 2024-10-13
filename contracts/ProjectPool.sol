@@ -81,7 +81,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     /////////////// CONTRACT MODIFIERS ////////////////
     //////////////////////////////////////////////////
     modifier onlyProjectOwner() {
-        if (_msgSender() == projectDetail.projectOwner) {
+        if (_msgSender() != projectDetail.projectOwner) {
             revert NotProjectOwner();
         }
         _;
@@ -223,16 +223,16 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             "Project is still active"
         );
 
-        uint256 raisedAmount = getProjectRaisedAmount();
-        uint256 IDOFeeAmount = (raisedAmount * IDO_FEE_RATE) /
-            10 ** RATE_DECIMALS;
-        uint256 withdrawAmount = raisedAmount - IDOFeeAmount;
+        uint256 withdrawAmount = getWithdrawAmount();
 
-        projectDetail.acceptedVAsset.transferFrom(
-            address(this),
+        bool success = IERC20(projectDetail.acceptedVAsset).transfer(
             _msgSender(),
             withdrawAmount
         );
+
+        if (!success) {
+            revert ERC20TransferFailed();
+        }
 
         emit ProjectWithdrawn(
             _msgSender(),
@@ -260,7 +260,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         }
 
         emit Invested(investor, project.projectId, amount);
-		projectDetail.raisedAmount += totalInvestAmount;
+        projectDetail.raisedAmount += totalInvestAmount;
         _takeInvestorVAsset(investor, amount);
     }
 
@@ -401,6 +401,17 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail.endTime;
     }
 
+    function getWithdrawAmount() public view returns (uint256) {
+        uint256 raisedAmount = getProjectRaisedAmount();
+        uint256 IDOFeeAmount = (raisedAmount * IDO_FEE_RATE) /
+            10 ** RATE_DECIMALS;
+        uint256 withdrawAmount = raisedAmount - IDOFeeAmount;
+        return withdrawAmount;
+    }
+
+    function getProjectOwner() public view returns (address) {
+        return projectDetail.projectOwner;
+    }
     ////////////////////////////////////////////////////
     //////////////// SETTER FUNCTIONS /////////////////
     //////////////////////////////////////////////////
