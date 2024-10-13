@@ -245,7 +245,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         }
 
         emit Invested(investor, project.projectId, amount);
-		projectDetail.raisedAmount += amount;
+		projectDetail.raisedAmount += totalInvestAmount;
         _takeInvestorVAsset(investor, amount);
     }
 
