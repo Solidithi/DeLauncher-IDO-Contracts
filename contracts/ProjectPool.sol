@@ -44,7 +44,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     uint256 public constant RATE_DECIMALS = 4;
 
     // IDO fee rate
-    uint256 public constant IDOFeeRate = 50; // equals to 0.0005 if RATE_DECIMALS is 4
+    uint256 public constant IDO_FEE_RATE = 50; // equals to 0.005 if RATE_DECIMALS is 4
 
     // Address of Bifrost SLPX contract
     address public immutable slpxAddress;
@@ -223,16 +223,21 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             "Project is still active"
         );
 
+        uint256 raisedAmount = getProjectRaisedAmount();
+        uint256 IDOFeeAmount = (raisedAmount * IDO_FEE_RATE) /
+            10 ** RATE_DECIMALS;
+        uint256 withdrawAmount = raisedAmount - IDOFeeAmount;
+
         projectDetail.acceptedVAsset.transferFrom(
             address(this),
             _msgSender(),
-            projectDetail.raisedAmount
+            withdrawAmount
         );
 
         emit ProjectWithdrawn(
             _msgSender(),
             projectDetail.projectId,
-            projectDetail.raisedAmount
+            withdrawAmount
         );
     }
 
