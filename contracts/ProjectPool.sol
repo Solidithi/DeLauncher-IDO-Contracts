@@ -223,7 +223,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             "Project is still active"
         );
 
-        projectDetail.acceptedVAsset.transferFrom(
+        IERC20(projectDetail.acceptedVAsset).transferFrom(
             address(this),
             _msgSender(),
             projectDetail.raisedAmount
@@ -395,6 +395,10 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     function getProjectEndTime() public view returns (uint256) {
         return projectDetail.endTime;
     }
+
+	function getProjectOwner() public view returns (address) {
+		return projectDetail.projectOwner;
+	}
 
     ////////////////////////////////////////////////////
     //////////////// SETTER FUNCTIONS /////////////////
