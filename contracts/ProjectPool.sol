@@ -44,7 +44,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     uint256 public constant RATE_DECIMALS = 4;
 
     // IDO fee rate
-    uint256 public constant IDOFeeRate = 50; // equals to 0.0005 if RATE_DECIMALS is 4
+    uint256 public constant IDO_FEE_RATE = 50; // equals to 0.005 if RATE_DECIMALS is 4
 
     // Address of Bifrost SLPX contract
     address public immutable slpxAddress;
@@ -81,7 +81,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     /////////////// CONTRACT MODIFIERS ////////////////
     //////////////////////////////////////////////////
     modifier onlyProjectOwner() {
-        if (_msgSender() == projectDetail.projectOwner) {
+        if (_msgSender() != projectDetail.projectOwner) {
             revert NotProjectOwner();
         }
         _;
@@ -223,16 +223,21 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             "Project is still active"
         );
 
-        IERC20(projectDetail.acceptedVAsset).transferFrom(
-            address(this),
+        uint256 withdrawAmount = getWithdrawAmount();
+
+        bool success = IERC20(projectDetail.acceptedVAsset).transfer(
             _msgSender(),
-            projectDetail.raisedAmount
+            withdrawAmount
         );
+
+        if (!success) {
+            revert ERC20TransferFailed();
+        }
 
         emit ProjectWithdrawn(
             _msgSender(),
             projectDetail.projectId,
-            projectDetail.raisedAmount
+            withdrawAmount
         );
     }
 
@@ -255,7 +260,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         }
 
         emit Invested(investor, project.projectId, amount);
-		projectDetail.raisedAmount += totalInvestAmount;
+        projectDetail.raisedAmount += totalInvestAmount;
         _takeInvestorVAsset(investor, amount);
     }
 
@@ -400,6 +405,17 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 		return projectDetail.projectOwner;
 	}
 
+    function getWithdrawAmount() public view returns (uint256) {
+        uint256 raisedAmount = getProjectRaisedAmount();
+        uint256 IDOFeeAmount = (raisedAmount * IDO_FEE_RATE) /
+            10 ** RATE_DECIMALS;
+        uint256 withdrawAmount = raisedAmount - IDOFeeAmount;
+        return withdrawAmount;
+    }
+
+    function getProjectOwner() public view returns (address) {
+        return projectDetail.projectOwner;
+    }
     ////////////////////////////////////////////////////
     //////////////// SETTER FUNCTIONS /////////////////
     //////////////////////////////////////////////////
