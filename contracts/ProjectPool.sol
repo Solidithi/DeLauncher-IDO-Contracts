@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
-import {console} from "forge-std/console.sol";
 
 contract ProjectPool is Ownable, ReentrancyGuard {
     struct ProjectDetail {
@@ -50,10 +49,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     // Address of Bifrost SLPX contract
     address public immutable slpxAddress;
 
-
     // Project ID value counter
 
-    mapping(address => uint256) private investedAmount;
+    mapping(address => uint256) private userDepositAmount;
     mapping(address => bool) private whitelistedAddresses;
 
     ////////////////////////////////////////////////////
@@ -93,8 +91,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     modifier isInIDOTimeFrame() {
-		console.log("Now is: ", block.timestamp);
-		console.log("Project start time:", projectDetail.startTime);
         if (block.timestamp < projectDetail.startTime) {
             revert ProjectIDOHasNotStarted();
         }
@@ -146,6 +142,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     error NotEnoughERC20Allowance();
     error ProjectIDOHasNotStarted();
     error ProjectIDOHasEnded();
+    error HardCapExceeded();
 
     /**
      * @dev investProject errors
@@ -153,7 +150,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     // error NotEnoughERC20Allowance(); also use in investProject func.
     error MinInvestmentNotReached();
     error MaxInvestmentExceeded();
-    error HardCapExceeded();
     error UserNotWhitelisted();
 
     /**
@@ -176,7 +172,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         uint256 softCapAmount,
         uint256 rewardRate,
         address acceptedVAsset,
-		address _slpxAddress
+        address _slpxAddress
     ) notZeroAddress(projectOwner) Ownable(projectOwner) {
         // constraint check
         if (hardCapAmount <= 0 || hardCapAmount <= softCapAmount) {
@@ -219,7 +215,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     function withdrawFund(
         uint256 _projectId
-    ) public onlyProjectOwner nonReentrant {
+    ) external onlyProjectOwner nonReentrant {
         require(
             block.timestamp > projectDetail.endTime,
             "Project is still active"
@@ -232,12 +228,12 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     function investProject(
         uint256 amount
-    ) public isInIDOTimeFrame needToBeWhitelisted(_msgSender()) nonReentrant {
+    ) external isInIDOTimeFrame needToBeWhitelisted(_msgSender()) nonReentrant {
         address investor = _msgSender();
 
         // check
         ProjectDetail memory project = getProjectFullDetails();
-        uint256 reserveAmount = getInvestedAmount(investor);
+        uint256 reserveAmount = getUserDepositAmount(investor);
         uint256 totalInvestAmount = reserveAmount + amount;
 
         if (totalInvestAmount < project.minInvest) {
@@ -248,12 +244,8 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             revert MaxInvestmentExceeded();
         }
 
-        if (project.raisedAmount + totalInvestAmount > project.hardCapAmount) {
-            revert HardCapExceeded();
-        }
-
         emit Invested(investor, project.projectId, amount);
-
+		projectDetail.raisedAmount += amount;
         _takeInvestorVAsset(investor, amount);
     }
 
@@ -271,6 +263,10 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         if (whitelistedAddresses[investor]) {
             revert AlreadyWhitelisted();
         }
+
+		if (getProjectRaisedAmount() >= getProjectHardCapAmount()) {
+			revert HardCapExceeded();
+		}
 
         emit Whitelisted(_msgSender(), projectDetail.projectId);
         whitelistedAddresses[investor] = true;
@@ -293,8 +289,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         }
 
         // update states
-        investedAmount[investor] += amount;
-        projectDetail.raisedAmount += amount;
+        userDepositAmount[investor] += amount;
 
         // interactions
         bool success = IERC20(vAsset).transferFrom(
@@ -365,8 +360,8 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return currentProjectId;
     }
 
-    function getInvestedAmount(address _userAdr) public view returns (uint256) {
-        return investedAmount[_userAdr];
+    function getUserDepositAmount(address _userAdr) public view returns (uint256) {
+        return userDepositAmount[_userAdr];
     }
 
     function getReserveInvestment() public view returns (uint256) {
@@ -381,13 +376,13 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail;
     }
 
-	function getProjectStartTime() public view returns (uint256) {
-		return projectDetail.startTime;
-	}
+    function getProjectStartTime() public view returns (uint256) {
+        return projectDetail.startTime;
+    }
 
-	function getProjectEndTime() public view returns (uint256) {
-		return projectDetail.endTime;
-	}
+    function getProjectEndTime() public view returns (uint256) {
+        return projectDetail.endTime;
+    }
 
     ////////////////////////////////////////////////////
     //////////////// SETTER FUNCTIONS /////////////////
