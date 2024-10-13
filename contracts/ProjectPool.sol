@@ -401,10 +401,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail.endTime;
     }
 
-	function getProjectOwner() public view returns (address) {
-		return projectDetail.projectOwner;
-	}
-
     function getWithdrawAmount() public view returns (uint256) {
         uint256 raisedAmount = getProjectRaisedAmount();
         uint256 IDOFeeAmount = (raisedAmount * IDO_FEE_RATE) /

@@ -28,10 +28,74 @@ contract WithdrawTest is Test, Script {
         pr = pool.getProjectDetail();
     }
 
-    function test_Correct_WithdrawAmount() external {
+    function test_POBalanceAfterWithdraw() external {
         MockProjectToken projectToken = new MockProjectToken();
         MockVToken vToken = new MockVToken();
 
+        uint256 customProjectId = _getCustomPool(projectToken, vToken);
+        address poolAddress = factory.getProjectPoolAddress(customProjectId);
+        ProjectPool customPool = ProjectPool(poolAddress);
+
+        address investor = address(0x01);
+		uint256 maxInvest = customPool.getProjectMaxInvest();	
+        MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);
+        MockVToken(vToken).approve(address(customPool), maxInvest);
+        testUtil.whitelistUser(customPool, investor);
+        uint256 amountToReachMaxInvest = customPool.getProjectMaxInvest() -
+            customPool.getUserDepositAmount(investor);
+        testUtil.userInvest(customPool, investor, amountToReachMaxInvest);
+
+        // console.log(customPool.getProjectRaisedAmount());
+        uint256 rightNow = block.timestamp;
+        uint256 timetravel = rightNow + 2 minutes;
+        vm.warp(timetravel);
+        uint256 withdrawAmount = customPool.getWithdrawAmount();
+        uint256 POBalanceBefore = MockVToken(vToken).balanceOf(address(this));
+        customPool.withdrawFund();
+        uint256 POBalanceAfter = MockVToken(vToken).balanceOf(address(this));
+
+		// assertion
+        uint256 totalBal = POBalanceBefore + withdrawAmount;
+        assertEq(totalBal, POBalanceAfter);
+        vm.warp(rightNow);
+    }
+
+	function test_ProjectPoolBalanceAfterWithdraw() external {
+        MockProjectToken projectToken = new MockProjectToken();
+        MockVToken vToken = new MockVToken();
+
+        uint256 customProjectId = _getCustomPool(projectToken, vToken);
+        address poolAddress = factory.getProjectPoolAddress(customProjectId);
+        ProjectPool customPool = ProjectPool(poolAddress);
+
+        address investor = address(0x01);
+		uint256 maxInvest = customPool.getProjectMaxInvest();	
+        MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);
+        MockVToken(vToken).approve(address(customPool), maxInvest);
+        testUtil.whitelistUser(customPool, investor);
+        uint256 amountToReachMaxInvest = customPool.getProjectMaxInvest() -
+            customPool.getUserDepositAmount(investor);
+        testUtil.userInvest(customPool, investor, amountToReachMaxInvest);
+
+        // console.log(customPool.getProjectRaisedAmount());
+        uint256 rightNow = block.timestamp;
+        uint256 timetravel = rightNow + 2 minutes;
+        vm.warp(timetravel);
+        uint256 withdrawAmount = customPool.getWithdrawAmount();
+        uint256 PoolBalanceBefore = MockVToken(vToken).balanceOf(poolAddress);
+        customPool.withdrawFund();
+        uint256 PoolBalanceAfter = MockVToken(vToken).balanceOf(poolAddress);
+
+		// asertion
+        uint256 totalBal = PoolBalanceAfter + withdrawAmount;
+        assertEq(totalBal, PoolBalanceBefore);
+        vm.warp(rightNow);
+	}
+
+    function _getCustomPool(
+        MockProjectToken projectToken,
+        MockVToken vToken
+    ) internal returns (uint256) {
         address tokenAddress = address(projectToken); // Replace with actual token address
         uint256 pricePerToken = 1; // 1 project token is equal to exactly 1 vToken, for simplicity
         uint256 startTime = block.timestamp; // Start now
@@ -58,38 +122,6 @@ contract WithdrawTest is Test, Script {
             acceptedVAsset
         );
 
-        address poolAddress = factory.getProjectPoolAddress(customProjectId);
-        ProjectPool customPool = ProjectPool(poolAddress);
-
-        console.logAddress(customPool.getProjectOwner());
-        console.logAddress(address(this));
-
-        address investor = address(0x01);
-        MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);
-        uint256 investorVBalance = MockVToken(vToken).balanceOf(investor);
-        console.log(investorVBalance);
-        MockVToken(vToken).approve(address(customPool), maxInvest);
-        testUtil.whitelistUser(customPool, investor);
-        uint256 amountToReachMaxInvest = customPool.getProjectMaxInvest() -
-            customPool.getUserDepositAmount(investor);
-        testUtil.userInvest(customPool, investor, amountToReachMaxInvest);
-
-        console.log(customPool.getProjectRaisedAmount());
-
-        address projectOwner = address(this);
-
-        uint256 rightNow = block.timestamp;
-        uint256 timetravel = rightNow + 2 minutes;
-        vm.warp(timetravel);
-        uint256 withdrawAmount = customPool.getWithdrawAmount();
-        uint256 POBalanceBefore = MockVToken(vToken).balanceOf(projectOwner);
-        customPool.withdrawFund();
-        uint256 POBalanceAfter = MockVToken(acceptedVAsset).balanceOf(
-            projectOwner
-        );
-
-        uint256 totalBal = POBalanceBefore + withdrawAmount;
-        assertEq(totalBal, POBalanceAfter);
-        vm.warp(rightNow);
+        return customProjectId;
     }
 }
