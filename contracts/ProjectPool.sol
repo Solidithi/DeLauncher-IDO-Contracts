@@ -69,9 +69,13 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     event Invested(
         address indexed user,
         uint256 indexed projectId,
-        uint256 indexed amount
+        uint256 amount
     );
-    event ProjectWithdrawn(address indexed user, uint256 indexed projectId);
+    event ProjectWithdrawn(
+        address indexed user,
+        uint256 indexed projectId,
+        uint256 amount
+    );
 
     ////////////////////////////////////////////////////
     /////////////// CONTRACT MODIFIERS ////////////////
@@ -213,17 +217,23 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      * @notice Project owner lists project on IDO
      */
 
-    function withdrawFund(
-        uint256 _projectId
-    ) external onlyProjectOwner nonReentrant {
+    function withdrawFund() external onlyProjectOwner nonReentrant {
         require(
             block.timestamp > projectDetail.endTime,
             "Project is still active"
         );
-        uint256 projectRaisedAmount = projectDetail.raisedAmount;
-        payable(_msgSender()).transfer(projectRaisedAmount);
-        projectDetail.raisedAmount = 0;
-        emit ProjectWithdrawn(_msgSender(), _projectId);
+
+        projectDetail.acceptedVAsset.transferFrom(
+            address(this),
+            _msgSender(),
+            projectDetail.raisedAmount
+        );
+
+        emit ProjectWithdrawn(
+            _msgSender(),
+            projectDetail.projectId,
+            projectDetail.raisedAmount
+        );
     }
 
     function investProject(
@@ -245,7 +255,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         }
 
         emit Invested(investor, project.projectId, amount);
-		projectDetail.raisedAmount += amount;
+        projectDetail.raisedAmount += amount;
         _takeInvestorVAsset(investor, amount);
     }
 
@@ -264,9 +274,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             revert AlreadyWhitelisted();
         }
 
-		if (getProjectRaisedAmount() >= getProjectHardCapAmount()) {
-			revert HardCapExceeded();
-		}
+        if (getProjectRaisedAmount() >= getProjectHardCapAmount()) {
+            revert HardCapExceeded();
+        }
 
         emit Whitelisted(_msgSender(), projectDetail.projectId);
         whitelistedAddresses[investor] = true;
@@ -360,7 +370,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return currentProjectId;
     }
 
-    function getUserDepositAmount(address _userAdr) public view returns (uint256) {
+    function getUserDepositAmount(
+        address _userAdr
+    ) public view returns (uint256) {
         return userDepositAmount[_userAdr];
     }
 
