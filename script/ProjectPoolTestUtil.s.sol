@@ -29,6 +29,19 @@ contract MockVToken is ERC20 {
 	}
 }
 
+contract MockVTokenButReturnFalseOnTransfer is ERC20 {
+    constructor() ERC20("vToken", "VT") {
+		_mint(_msgSender(), 100000000000);
+    }
+
+	function freeMoneyForEveryone(address receiver, uint256 amount) public {
+		_mint(receiver, amount);
+	}
+    function transfer(address, uint256) public pure override returns (bool) {
+        return false;
+    }
+}
+
 contract ProjectPoolTestUtil is Script {
     MockProjectToken projectToken;
     MockVToken vToken;
