@@ -161,6 +161,11 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      */
     error ERC20TransferFailed();
 
+    /**
+     * @dev project owner withdraw errors
+     */
+    error ProjectStillActive();
+
     ////////////////////////////////////////////////////
     //////////// TRANSACTIONAL FUNCTIONS //////////////
     //////////////////////////////////////////////////
@@ -220,7 +225,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     function withdrawFund() external onlyProjectOwner nonReentrant {
         require(
             block.timestamp > projectDetail.endTime,
-            "Project is still active"
+            revert ProjectStillActive();
         );
 
         uint256 withdrawAmount = getWithdrawAmount();
