@@ -228,10 +228,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      */
 
     function withdrawFund() external onlyProjectOwner nonReentrant {
-        require(
-            block.timestamp > projectDetail.endTime,
+        if(block.timestamp < projectDetail.endTime){
             revert ProjectStillActive();
-        );
+        }
 
         uint256 withdrawAmount = getWithdrawAmount();
 

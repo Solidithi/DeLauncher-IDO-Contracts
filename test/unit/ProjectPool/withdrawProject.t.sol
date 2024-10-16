@@ -4,11 +4,12 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import {ProjectPool} from "../../../contracts/ProjectPool.sol"; // Adjust the path to your contract
 import {ProjectPoolFactory} from "../../../contracts/ProjectPoolFactory.sol";
-import {ProjectPoolTestUtil, MockVToken, MockProjectToken, MockVTokenButReturnFalseOnTransfer} from "../../../script/ProjectPoolTestUtil.s.sol";
+import {ProjectPoolTestUtil, MockVToken, MockProjectToken, MockVTokenButReturnFalseOnTransfer, AttackerContract} from "../../../script/ProjectPoolTestUtil.s.sol";
 import {console} from "forge-std/console.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IERC20Errors} from "@openzeppelin/interfaces/draft-IERC6093.sol";
+import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
 import {Script} from "forge-std/Script.sol";
 
 contract WithdrawTest is Test, Script {
@@ -144,7 +145,7 @@ contract WithdrawTest is Test, Script {
         testUtil.userInvest(customPool, investor, amountToReachMaxInvest);
 
 		// asertion
-        vm.expectRevert("Project is still active");
+        vm.expectRevert(ProjectPool.ProjectStillActive.selector);
         customPool.withdrawFund();
 	}
 
@@ -268,5 +269,48 @@ contract WithdrawTest is Test, Script {
 
         // reset timestamp
         vm.warp(rightNow);
-	}    
+	}
+
+    function test_canWithDrawPreventReentrancy() external {
+        MockProjectToken projectToken = new MockProjectToken();
+        MockVToken vToken = new MockVToken();
+
+        AttackerContract attacker = new AttackerContract(factory);
+        attacker.createPool(
+        address(projectToken),
+            1,
+            block.timestamp,
+            block.timestamp + 1 minutes,
+            (1 * (10 ** vToken.decimals())) / 4,  
+            1 * (10 ** vToken.decimals()),      
+            10000 * (10 ** vToken.decimals()),    
+            1 * (10 ** vToken.decimals()),        
+            (1 * (10 ** 4)) / 10,               
+            address(vToken)
+        );
+
+        address poolOwner = attacker.getPoolOwner();
+        assertEq(poolOwner, address(attacker), "Attacker should be the pool owner");
+
+        uint256 maxInvest = attacker.pool().getProjectMaxInvest();
+
+        address investor = address(0x01);
+    
+        MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);  
+        MockVToken(vToken).approve(address(attacker.pool()), maxInvest);  
+        testUtil.whitelistUser(attacker.pool(), investor);  
+        uint256 amountToReachMaxInvest = attacker.pool().getProjectMaxInvest() - attacker.pool().getUserDepositAmount(investor);
+        testUtil.userInvest(attacker.pool(), investor, amountToReachMaxInvest);  
+
+        uint256 rightNow = block.timestamp;
+        uint256 timeTravel = rightNow + 2 minutes;
+        vm.warp(timeTravel);
+
+        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
+        attacker.attackWithdraw();  
+
+        // Reset timestamp 
+        vm.warp(rightNow);
+    }
 }
+
