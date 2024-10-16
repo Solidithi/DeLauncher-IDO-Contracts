@@ -123,6 +123,16 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         _;
     }
 
+    modifier availableForWithdraw(){
+        if(block.timestamp < projectDetail.endTime){
+            revert ProjectStillActive();
+        }
+        if(projectDetail.raisedAmount < projectDetail.softCapAmount){
+            revert SoftCapNotReach();
+        }
+        _;
+    }
+
     ////////////////////////////////////////////////////
     //////////////// CONTRACT ERRORS //////////////////
     //////////////////////////////////////////////////
@@ -170,6 +180,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      * @dev project owner withdraw errors
      */
     error ProjectStillActive();
+    error SoftCapNotReach();
 
     ////////////////////////////////////////////////////
     //////////// TRANSACTIONAL FUNCTIONS //////////////
@@ -227,11 +238,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      * @notice Project owner lists project on IDO
      */
 
-    function withdrawFund() external onlyProjectOwner nonReentrant {
-        if(block.timestamp < projectDetail.endTime){
-            revert ProjectStillActive();
-        }
-
+    function withdrawFund() external onlyProjectOwner nonReentrant availableForWithdraw {
         uint256 withdrawAmount = getWithdrawAmount();
 
         bool success = IERC20(projectDetail.acceptedVAsset).transfer(

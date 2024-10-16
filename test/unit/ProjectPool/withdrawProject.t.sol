@@ -39,11 +39,11 @@ contract WithdrawTest is Test, Script {
         uint256 startTime = block.timestamp; // Start now
         uint256 endTime = startTime + 1 minutes; // End in 1 min
         uint256 minInvest = (1 * (10 ** vToken.decimals())) / 4; // Min invest: 0.25 vToken;
-        uint256 maxInvest = 1 * (10 ** vToken.decimals()); // Max invest: 1 vToken
+        uint256 maxInvest = 10 * (10 ** vToken.decimals()); // Max invest: 10 vToken
         // uint256 hardCapAmount = 10000 * (10 ** vToken.decimals()); // Hard cap: 10000 vTokens
-        uint256 hardCapAmount = maxInvest;
+        uint256 hardCapAmount = maxInvest * 10000;
         // uint256 softCapAmount = 1 * (10 ** vToken.decimals()); // Soft cap: 10 vTokens
-        uint256 softCapAmount = minInvest;
+        uint256 softCapAmount = maxInvest;
         uint256 rewardRate = (1 * (10 ** 4)) / 10; // 0.1 (10%) reward rate
         address acceptedVAsset = address(vToken); // Replace with actual vAsset address
 
@@ -72,7 +72,7 @@ contract WithdrawTest is Test, Script {
         ProjectPool customPool = ProjectPool(poolAddress);
 
         address investor = address(0x01);
-		uint256 maxInvest = customPool.getProjectMaxInvest();	
+		uint256 maxInvest = customPool.getProjectMaxInvest() * 10; 	
         MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);
         MockVToken(vToken).approve(address(customPool), maxInvest);
         testUtil.whitelistUser(customPool, investor);
@@ -265,6 +265,35 @@ contract WithdrawTest is Test, Script {
 		// asertion
         vm.expectRevert(ProjectPool.NotProjectOwner.selector);
         vm.prank(investor);
+        customPool.withdrawFund();
+
+        // reset timestamp
+        vm.warp(rightNow);
+	}
+
+    function test_WithdrawWhenSoftCapNotReach() external {
+        MockProjectToken projectToken = new MockProjectToken();
+        MockVToken vToken = new MockVToken();
+
+        uint256 customProjectId = _getCustomPool(projectToken, vToken);
+        address poolAddress = factory.getProjectPoolAddress(customProjectId);
+        ProjectPool customPool = ProjectPool(poolAddress);
+
+        address investor = address(0x01);
+		uint256 invest = customPool.getProjectMinInvest();
+        MockVToken(vToken).freeMoneyForEveryone(investor, invest);
+        MockVToken(vToken).approve(address(customPool), invest);
+        testUtil.whitelistUser(customPool, investor);
+        uint256 whatUserHaveLeft = invest - customPool.getUserDepositAmount(investor);
+        testUtil.userInvest(customPool, investor, whatUserHaveLeft);
+
+        uint256 rightNow = block.timestamp;
+        uint256 timetravel = rightNow + 2 minutes;
+        vm.warp(timetravel);
+
+		// asertion
+        vm.expectRevert(ProjectPool.SoftCapNotReach.selector);
+
         customPool.withdrawFund();
 
         // reset timestamp
