@@ -123,11 +123,11 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier availableForWithdraw(){
-        if(block.timestamp < projectDetail.endTime){
+    modifier availableForWithdraw() {
+        if (block.timestamp < projectDetail.endTime) {
             revert ProjectStillActive();
         }
-        if(projectDetail.raisedAmount < projectDetail.softCapAmount){
+        if (projectDetail.raisedAmount < projectDetail.softCapAmount) {
             revert SoftCapNotReach();
         }
         _;
@@ -238,7 +238,12 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      * @notice Project owner lists project on IDO
      */
 
-    function withdrawFund() external onlyProjectOwner nonReentrant availableForWithdraw {
+    function withdrawFund()
+        external
+        onlyProjectOwner
+        nonReentrant
+        availableForWithdraw
+    {
         uint256 withdrawAmount = getWithdrawAmount();
 
         bool success = IERC20(projectDetail.acceptedVAsset).transfer(
@@ -336,12 +341,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     /////////////////// REDEEM  ///////////////////////
     //////////////////////////////////////////////////
 
-    function redeemTokens() external {
+    function redeemTokens() external availableForWithdraw {
         require(claimableAmount > 0, "No tokens to redeem");
 
-        require(block.timestamp > projectDetail.endTime, "Project is not end");
-
-        require(projectDetail.raisedAmount > projectDetail.softCapAmount, "Project has not reached the softcap");
         address investor = _msgSender();
         uint256 claimableAmount = userClaimableTokens[investor];
 
@@ -366,7 +368,22 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
         emit Redeemed(investor, projectDetail.projectId, totalTransferAmount);
     }
+    ////////////////////////////////////////////////////
+    ///////////////////// Refund //////////////////////
+    //////////////////////////////////////////////////
+    function refundToken() external availableForWithdraw {
+        require(claimableAmount > 0, "No token to refund");
 
+        bool refundSuccess = IERC20(projectDetail.acceptedVAsset).transfer(
+            investor,
+            claimableAmount
+        );
+        if (!refundSuccess) {
+            revert ERC20TransferFailed();
+        }
+        userClaimableTokens[investor] = 0;
+        emit Redeemed(investor, projectDetail.projectId, claimableAmount);
+    }
     ////////////////////////////////////////////////////
     //////////////// GETTER FUNCTIONS /////////////////
     //////////////////////////////////////////////////
@@ -397,6 +414,10 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     function getProjectSoftCapAmount() public view returns (uint256) {
         return projectDetail.softCapAmount;
+    }
+
+    function getProjectSoftCapReached() public view returns (bool) {
+        return projectDetail.raisedAmount >= projectDetail.softCapAmount;
     }
 
     function getProjectMinInvest() public view returns (uint256) {
