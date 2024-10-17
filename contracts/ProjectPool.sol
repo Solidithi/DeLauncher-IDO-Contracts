@@ -342,10 +342,10 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////
 
     function redeemTokens() external availableForWithdraw {
-        require(claimableAmount > 0, "No tokens to redeem");
-
         address investor = _msgSender();
         uint256 claimableAmount = userClaimableTokens[investor];
+        require(claimableAmount > 0, "No tokens to redeem");
+
 
         // Get the reward based on the rewardRate and total claimable amount
         uint256 rewardAmount = (claimableAmount * projectDetail.rewardRate);
@@ -372,6 +372,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     ///////////////////// Refund //////////////////////
     //////////////////////////////////////////////////
     function refundToken() external availableForWithdraw {
+        address investor = _msgSender();
+        uint256 claimableAmount = userClaimableTokens[investor];
+        
         require(claimableAmount > 0, "No token to refund");
 
         bool refundSuccess = IERC20(projectDetail.acceptedVAsset).transfer(
