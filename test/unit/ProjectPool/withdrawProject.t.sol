@@ -190,39 +190,29 @@ contract WithdrawTest is Test, Script {
 
     function test_WithdrawCallingButTransferReturnFailInsteadOfError() external {
         MockProjectToken projectToken = new MockProjectToken();
-        MockVTokenButReturnFalseOnTransfer vToken = new MockVTokenButReturnFalseOnTransfer();
-
-        address tokenAddress = address(projectToken); // Replace with actual token address
-        uint256 pricePerToken = 1; // 1 project token is equal to exactly 1 vToken, for simplicity
-        uint256 startTime = block.timestamp; // Start now
-        uint256 endTime = startTime + 1 minutes; // End in 1 min
-        uint256 minInvest = (1 * (10 ** vToken.decimals())) / 4; // Min invest: 0.25 vToken;
-        uint256 maxInvest = 1 * (10 ** vToken.decimals()); // Max invest: 1 vToken
-        // uint256 hardCapAmount = 10000 * (10 ** vToken.decimals()); // Hard cap: 10000 vTokens
-        uint256 hardCapAmount = maxInvest;
-        // uint256 softCapAmount = 1 * (10 ** vToken.decimals()); // Soft cap: 10 vTokens
-        uint256 softCapAmount = minInvest;
-        uint256 rewardRate = (1 * (10 ** 4)) / 10; // 0.1 (10%) reward rate
-        address acceptedVAsset = address(vToken); // Replace with actual vAsset address
+        MockVTokenButReturnFalseOnTransfer vToken 
+           = new MockVTokenButReturnFalseOnTransfer();
 
         uint256 customProjectId = factory.createProjectPool(
-            tokenAddress,
-            pricePerToken,
-            startTime,
-            endTime,
-            minInvest,
-            maxInvest,
-            hardCapAmount,
-            softCapAmount,
-            rewardRate,
-            acceptedVAsset
+            address(projectToken),
+            1,
+            block.timestamp,
+            block.timestamp + 1 minutes,
+            (1 * (10 ** vToken.decimals())) / 4,
+            1 * (10 ** vToken.decimals()),
+            10000 * (10 ** vToken.decimals()),   
+            1 * (10 ** vToken.decimals()),
+            (1 * (10 ** 4)) / 10,
+            address(vToken)
         );
 		address poolAddress = factory.getProjectPoolAddress(customProjectId);
 		ProjectPool customPool = ProjectPool(poolAddress);	
 
 		address investor = address(0x001);
-        MockVTokenButReturnFalseOnTransfer(vToken).freeMoneyForEveryone(investor, maxInvest);
-        MockVTokenButReturnFalseOnTransfer(vToken).approve(address(customPool), maxInvest);
+        MockVTokenButReturnFalseOnTransfer(vToken)
+            .freeMoneyForEveryone(investor, customPool.getProjectMaxInvest());
+        MockVTokenButReturnFalseOnTransfer(vToken)
+            .approve(address(customPool), customPool.getProjectMaxInvest());
 
         testUtil.whitelistUser(customPool, investor);
         uint256 amountToReachMaxInvest = customPool.getProjectMaxInvest() -
@@ -328,7 +318,8 @@ contract WithdrawTest is Test, Script {
         MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);  
         MockVToken(vToken).approve(address(attacker.pool()), maxInvest);  
         testUtil.whitelistUser(attacker.pool(), investor);  
-        uint256 amountToReachMaxInvest = attacker.pool().getProjectMaxInvest() - attacker.pool().getUserDepositAmount(investor);
+        uint256 amountToReachMaxInvest = attacker.pool().getProjectMaxInvest() 
+            - attacker.pool().getUserDepositAmount(investor);
         testUtil.userInvest(attacker.pool(), investor, amountToReachMaxInvest);  
 
         uint256 rightNow = block.timestamp;
@@ -342,4 +333,3 @@ contract WithdrawTest is Test, Script {
         vm.warp(rightNow);
     }
 }
-
