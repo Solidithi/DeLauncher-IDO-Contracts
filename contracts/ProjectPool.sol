@@ -53,7 +53,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     mapping(address => uint256) private userDepositAmount;
     mapping(address => bool) private whitelistedAddresses;
-    mapping(address => uint256) private userClaimableTokens;
     ////////////////////////////////////////////////////
     //////////////// CONTRACT EVENTS //////////////////
     //////////////////////////////////////////////////
@@ -123,16 +122,19 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier availableForWithdraw() {
+    modifier isInWithdrawTimeFrame() {
         if (block.timestamp < projectDetail.endTime) {
             revert ProjectStillActive();
         }
+        _;
+    }
+
+    modifier SoftCapReached() {
         if (projectDetail.raisedAmount < projectDetail.softCapAmount) {
             revert SoftCapNotReach();
         }
         _;
     }
-
     ////////////////////////////////////////////////////
     //////////////// CONTRACT ERRORS //////////////////
     //////////////////////////////////////////////////
@@ -242,7 +244,8 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         external
         onlyProjectOwner
         nonReentrant
-        availableForWithdraw
+        isInWithdrawTimeFrame
+        SoftCapReached
     {
         uint256 withdrawAmount = getWithdrawAmount();
 
@@ -337,21 +340,19 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             revert ERC20TransferFailed();
         }
     }
+
     ////////////////////////////////////////////////////
     /////////////////// REDEEM  ///////////////////////
     //////////////////////////////////////////////////
-
-    function redeemTokens() external availableForWithdraw {
+    function redeemTokens() external isInWithdrawTimeFrame SoftCapReached needToBeWhitelisted(_msgSender()) nonReentrant {
         address investor = _msgSender();
-        uint256 claimableAmount = userClaimableTokens[investor];
-        require(claimableAmount > 0, "No tokens to redeem");
-
+        uint256 redeemAmount = getRedeemAmount();
 
         // Get the reward based on the rewardRate and total claimable amount
-        uint256 rewardAmount = (claimableAmount * projectDetail.rewardRate);
+        uint256 rewardAmount = (redeemAmount * projectDetail.rewardRate);
 
         // Total amount to be transferred (claimable tokens + reward)
-        uint256 totalTransferAmount = claimableAmount + rewardAmount;
+        uint256 totalTransferAmount = redeemAmount + rewardAmount;
 
         // Transfer the claimable tokens and reward to the user
         bool success = IERC20(projectDetail.tokenAddress).transfer(
@@ -363,29 +364,27 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             revert ERC20TransferFailed();
         }
 
-        // After redeeming, reset the user's claimable tokens to zero
-        userClaimableTokens[investor] = 0;
-
         emit Redeemed(investor, projectDetail.projectId, totalTransferAmount);
     }
+
     ////////////////////////////////////////////////////
     ///////////////////// Refund //////////////////////
     //////////////////////////////////////////////////
-    function refundToken() external availableForWithdraw {
+    function refundToken() external isInWithdrawTimeFrame needToBeWhitelisted(_msgSender()) nonReentrant {
         address investor = _msgSender();
-        uint256 claimableAmount = userClaimableTokens[investor];
-        
-        require(claimableAmount > 0, "No token to refund");
+        uint256 investAmount = userDepositAmount[investor];
+  
 
         bool refundSuccess = IERC20(projectDetail.acceptedVAsset).transfer(
             investor,
-            claimableAmount
+            investAmount
         );
+
         if (!refundSuccess) {
             revert ERC20TransferFailed();
         }
-        userClaimableTokens[investor] = 0;
-        emit Redeemed(investor, projectDetail.projectId, claimableAmount);
+
+        emit Redeemed(investor, projectDetail.projectId, investAmount);
     }
     ////////////////////////////////////////////////////
     //////////////// GETTER FUNCTIONS /////////////////
@@ -481,6 +480,12 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             10 ** RATE_DECIMALS;
         uint256 withdrawAmount = raisedAmount - IDOFeeAmount;
         return withdrawAmount;
+    }
+
+    function getRedeemAmount() public view returns (uint256) {
+        uint256 investAmount = userDepositAmount[_msgSender()]; 
+        uint256 redeemAmount = (investAmount * (10 ** RATE_DECIMALS)) / projectDetail.pricePerToken;
+        return redeemAmount;
     }
 
     function getProjectOwner() public view returns (address) {
