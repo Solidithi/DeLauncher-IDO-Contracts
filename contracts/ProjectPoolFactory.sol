@@ -7,10 +7,10 @@ import {Ownable} from "@openzeppelin/access/Ownable.sol";
 contract ProjectPoolFactory is Ownable {
     // projectId => Project pool address
     mapping(uint256 => address) projectPools;
-	// project pool address => is valid/not valid
-	mapping(address => bool) poolIsValid;
+    // project pool address => is valid/not valid
+    mapping(address => bool) poolIsValid;
     uint256 public currentProjectId = 1;
-	address public slpxAddress;
+    address public slpxAddress;
 
     error InvalidProjectId();
 
@@ -23,12 +23,12 @@ contract ProjectPoolFactory is Ownable {
     );
 
     constructor(address _slpxAddress) Ownable(_msgSender()) {
-		slpxAddress = _slpxAddress; 
-	}
+        slpxAddress = _slpxAddress;
+    }
 
-	/**
-	 * @return project ID (uint256)
-	 */
+    /**
+     * @return project ID (uint256)
+     */
     function createProjectPool(
         address tokenAddress,
         uint256 pricePerToken,
@@ -42,7 +42,7 @@ contract ProjectPoolFactory is Ownable {
         address acceptedVAsset
     ) public returns (uint256) {
         // create project
-		address projectOwner = _msgSender();
+        address projectOwner = _msgSender();
         uint256 newProjectId = currentProjectId;
         ProjectPool newProjectPool = new ProjectPool(
             projectOwner,
@@ -56,12 +56,12 @@ contract ProjectPoolFactory is Ownable {
             softCapAmount,
             rewardRate,
             acceptedVAsset,
-			slpxAddress
+            slpxAddress
         );
 
         // update states
         projectPools[newProjectId] = address(newProjectPool);
-		poolIsValid[address(newProjectPool)] = true;
+        poolIsValid[address(newProjectPool)] = true;
         currentProjectId++;
 
         emit ProjectPoolCreated(
@@ -72,7 +72,11 @@ contract ProjectPoolFactory is Ownable {
             endTime
         );
 
-		return newProjectId;
+        return newProjectId;
+    }
+
+    function getCurrentProjectId() public view returns (uint256) {
+        return currentProjectId;
     }
 
     function getProjectPoolAddress(
@@ -81,15 +85,13 @@ contract ProjectPoolFactory is Ownable {
         return projectPools[projectId];
     }
 
-	function checkPoolIsValid(
-		address poolAddress
-	) public view returns (bool) {
-		return poolIsValid[poolAddress];
-	}
+    function checkPoolIsValid(address poolAddress) public view returns (bool) {
+        return poolIsValid[poolAddress];
+    }
 
-	function setSlpxAddress(address _slpxAddress) public onlyOwner {
-		slpxAddress = _slpxAddress;
-	}
+    function setSlpxAddress(address _slpxAddress) public onlyOwner {
+        slpxAddress = _slpxAddress;
+    }
 
     modifier validProjectId(uint256 projectId) {
         if (projectId > currentProjectId || projectId <= 0) {

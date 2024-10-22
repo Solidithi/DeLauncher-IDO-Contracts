@@ -34,7 +34,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////
     // project detail
     ProjectDetail internal projectDetail;
-    uint256 internal currentProjectId = 1;
 
     /**
      * @dev use 4 DECIMALS for numbers related to rate
@@ -443,10 +442,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     function getTimeLeftUntilProjecctEnd() public view returns (uint256) {
         return projectDetail.endTime - block.timestamp;
-    }
-
-    function getCurrentProjectId() public view returns (uint256) {
-        return currentProjectId;
     }
 
     function getUserDepositAmount(
