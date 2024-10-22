@@ -98,17 +98,28 @@ contract JoinWhiteListTest is Test, Script {
         pool.joinWhitelist();
     }
 
-	function test_RevertIf_AlreadyWhitelisted() external {
-		testUtil.whitelistUser(pool, address(this));
+    function test_RevertIf_AlreadyWhitelisted() external {
+        testUtil.whitelistUser(pool, address(this));
 
-		// assertion 
-		vm.expectRevert(ProjectPool.AlreadyWhitelisted.selector);
-		testUtil.whitelistUser(pool, address(this));
-	}
+        // assertion
+        vm.expectRevert(ProjectPool.AlreadyWhitelisted.selector);
+        testUtil.whitelistUser(pool, address(this));
+    }
+
+    function test_RevertIf_ERC20AllowanceNotReached() external {
+        address vAsset = pool.getAcceptedVAsset();
+        uint256 reserveAmount = pool.getReserveInvestment();
+        MockVToken(vAsset).freeMoneyForEveryone(address(this), reserveAmount);
+        MockVToken(vAsset).approve(address(pool), reserveAmount - 1);
+
+        // assertion
+        vm.expectRevert(ProjectPool.NotEnoughERC20Allowance.selector);
+        pool.joinWhitelist();
+    }
 
     function test_RevertIf_HardCapExceeded() external {
-		MockProjectToken projectToken = new MockProjectToken();
-		MockVToken vToken = new MockVToken();
+        MockProjectToken projectToken = new MockProjectToken();
+        MockVToken vToken = new MockVToken();
 
         address tokenAddress = address(projectToken); // Replace with actual token address
         uint256 pricePerToken = 1; // 1 project token is equal to exactly 1 vToken, for simplicity
@@ -135,19 +146,19 @@ contract JoinWhiteListTest is Test, Script {
             rewardRate,
             acceptedVAsset
         );
-		address poolAddress = factory.getProjectPoolAddress(customProjectId);
-		ProjectPool customPool = ProjectPool(poolAddress);	
+        address poolAddress = factory.getProjectPoolAddress(customProjectId);
+        ProjectPool customPool = ProjectPool(poolAddress);
 
-		address investor1 = address(this);
+        address investor1 = address(this);
         testUtil.whitelistUser(customPool, investor1);
         uint256 amountToReachMaxInvest = customPool.getProjectMaxInvest() -
             customPool.getUserDepositAmount(investor1);
-		testUtil.userInvest(customPool, investor1, amountToReachMaxInvest);	
+        testUtil.userInvest(customPool, investor1, amountToReachMaxInvest);
 
-		// assertion
-		address investor2 = vm.addr(0x02);	
-		vm.startPrank(investor2);
-		vm.expectRevert(ProjectPool.HardCapExceeded.selector);
-		customPool.joinWhitelist();
+        // assertion
+        address investor2 = vm.addr(0x02);
+        vm.startPrank(investor2);
+        vm.expectRevert(ProjectPool.HardCapExceeded.selector);
+        customPool.joinWhitelist();
     }
 }
