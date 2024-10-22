@@ -10,7 +10,7 @@ contract MockSLPX {
     MockVToken public vToken;  
 
     constructor(MockVToken _vToken) payable {
-        vToken = new MockVToken;
+        vToken = _vToken;
 
         require(msg.value > 0, "Must send some native tokens to contract");
 
@@ -22,26 +22,31 @@ contract MockSLPX {
     function mintVNativeAsset(address receiver, string memory remark) external payable {
         require(msg.value > 0, "No native token sent");
 
-        bool success = IERC20(vToken.address).transfer(
-            receiver,
-            msg.value
-        );
+        bool success = vToken.transfer(receiver, msg.value);
 
-        require(success, "Mint Failed")
+        require(success, "Mint Failed");
 
-        console.log("Minted vAsset for", receiver, "Amount:", msg.value, "Remark:", remark);
+        console.log("vToken minted to address:", receiver, remark);
+    }
+
+    function isContract(address addr) internal view returns (bool) {
+        uint32 size;
+        assembly { size := extcodesize(addr) }
+        return size > 0;
     }
 
     function redeemAsset(address vAssetAddress, uint256 amount, address payable receiver) external {
-        require(vToken.balanceOf(msg.sender) >= amount, "Insufficient vToken balance");
+   
+        require(vAssetAddress == address(vToken), "Invalid vAsset address");
+        require(userBalance >= amount, "Insufficient vToken balance");
+        require(contractBalance >= amount, "Contract does not have enough native tokens");
+        require(!isContract(receiver), "Receiver cannot be a contract without payable fallback");
 
         bool success = vToken.transferFrom(msg.sender, address(this), amount);
+        console.log("Transfer from user to contract success:", success);
         require(success, "Token transfer failed");
 
-        require(address(this).balance >= amount, "Contract does not have enough native tokens");
-
-        receiver.transfer(amount);
-
-        console.log("Redeemed vAsset for", receiver, "Amount:", amount);
+        (bool sent, ) = receiver.call{value: amount}("");
+        require(sent, "Failed to send native tokens");
     }
 }
