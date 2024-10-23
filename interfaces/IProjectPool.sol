@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 interface IProjectPool {
-	struct ProjectDetail {
-		uint256 projectId;
+    struct ProjectDetail {
+        uint256 projectId;
         address projectOwner;
         address tokenAddress;
         // uint256 tokenForSale; // Not needed anymore 🔥
@@ -23,7 +23,7 @@ interface IProjectPool {
         address acceptedVAsset;
         // the proportion of raised fund that is reserved for rewarding investors
         uint256 rewardRate; // use RATE_DECIMALS
-	}
+    }
     /**
      * @notice Emitted when a user is whitelisted for a project.
      * @param user Address of the user being whitelisted.
@@ -55,7 +55,11 @@ interface IProjectPool {
      * @param projectId ID of the project.
      * @param amount Amount invested.
      */
-    event Invested(address indexed user, uint256 indexed projectId, uint256 amount);
+    event Invested(
+        address indexed user,
+        uint256 indexed projectId,
+        uint256 amount
+    );
 
     /**
      * @notice Emitted when the project owner withdraws funds.
@@ -63,7 +67,11 @@ interface IProjectPool {
      * @param projectId ID of the project.
      * @param amount Amount withdrawn.
      */
-    event ProjectWithdrawn(address indexed user, uint256 indexed projectId, uint256 amount);
+    event ProjectWithdrawn(
+        address indexed user,
+        uint256 indexed projectId,
+        uint256 amount
+    );
 
     /**
      * @notice Emitted when tokens are redeemed by the user.
@@ -71,13 +79,20 @@ interface IProjectPool {
      * @param projectId ID of the project.
      * @param amount Amount of tokens redeemed.
      */
-    event Redeemed(address indexed user, uint256 indexed projectId, uint256 amount);
+    event Redeemed(
+        address indexed user,
+        uint256 indexed projectId,
+        uint256 amount
+    );
 
     /**
      * @notice Returns the full details of the project.
      * @return ProjectDetail The project detail structure containing all relevant project data.
      */
-    function getProjectFullDetails() external view returns (ProjectDetail memory);
+    function getProjectFullDetails()
+        external
+        view
+        returns (ProjectDetail memory);
 
     /**
      * @notice Returns the total amount raised for the project.
@@ -116,6 +131,8 @@ interface IProjectPool {
      */
     function isProjectActive() external view returns (bool);
 
+    function isProjectFullyToppedUp() external view returns (bool);
+
     /**
      * @notice Returns the remaining time until the project ends.
      * @return uint256 The time left in seconds until the project ends.
@@ -127,7 +144,9 @@ interface IProjectPool {
      * @param _userAdr The user's address.
      * @return uint256 The total deposit amount.
      */
-    function getUserDepositAmount(address _userAdr) external view returns (uint256);
+    function getUserDepositAmount(
+        address _userAdr
+    ) external view returns (uint256);
 
     /**
      * @notice Returns the accepted vAsset address for the project.
@@ -140,6 +159,14 @@ interface IProjectPool {
      * @return address The project owner's address.
      */
     function getProjectOwner() external view returns (address);
+
+    function getAmountToTopUp() external view returns (uint256);
+
+    function getProjectTokenAddress() external view returns (address);
+
+    function getVAssetAddress() external view returns (address);
+
+    function getProjectTokenToppedUpAmt() external view returns (uint256);
 
     /**
      * @notice Allows the project owner to withdraw funds after the project has ended.

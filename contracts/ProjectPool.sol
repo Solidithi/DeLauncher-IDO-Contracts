@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.20;
 
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+// import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {Ownable} from "@openzeppelin/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
 
@@ -343,7 +344,13 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     ////////////////////////////////////////////////////
     /////////////////// REDEEM  ///////////////////////
     //////////////////////////////////////////////////
-    function redeemTokens() external isInWithdrawTimeFrame SoftCapReached needToBeWhitelisted(_msgSender()) nonReentrant {
+    function redeemTokens()
+        external
+        isInWithdrawTimeFrame
+        SoftCapReached
+        needToBeWhitelisted(_msgSender())
+        nonReentrant
+    {
         address investor = _msgSender();
         uint256 redeemAmount = getRedeemAmount();
 
@@ -369,10 +376,14 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     ////////////////////////////////////////////////////
     ///////////////////// Refund //////////////////////
     //////////////////////////////////////////////////
-    function refundToken() external isInWithdrawTimeFrame needToBeWhitelisted(_msgSender()) nonReentrant {
+    function refundToken()
+        external
+        isInWithdrawTimeFrame
+        needToBeWhitelisted(_msgSender())
+        nonReentrant
+    {
         address investor = _msgSender();
         uint256 investAmount = userDepositAmount[investor];
-  
 
         bool refundSuccess = IERC20(projectDetail.acceptedVAsset).transfer(
             investor,
@@ -385,6 +396,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
         emit Redeemed(investor, projectDetail.projectId, investAmount);
     }
+
     ////////////////////////////////////////////////////
     //////////////// GETTER FUNCTIONS /////////////////
     //////////////////////////////////////////////////
@@ -429,6 +441,14 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail.maxInvest;
     }
 
+    function isProjectFullyToppedUp() public view returns (bool) {
+        uint256 alreadyToppedUp = getProjectTokenToppedUpAmt();
+
+        uint256 amtToTopUp = getAmountToTopUp();
+
+        return alreadyToppedUp >= amtToTopUp;
+    }
+
     function isProjectActive() public view returns (bool) {
         return (block.timestamp > projectDetail.endTime);
     }
@@ -447,6 +467,19 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         address _userAdr
     ) public view returns (uint256) {
         return userDepositAmount[_userAdr];
+    }
+
+    // util function
+    function getAmountToTopUp() public view returns (uint256) {
+        uint256 vTokenHardCap = getProjectHardCapAmount();
+        uint8 projectTokenDecimals = IERC20(getProjectTokenAddress()).decimals();
+        uint256 toBeToppedUp = (vTokenHardCap * (10 ** projectTokenDecimals)) /
+            projectDetail.pricePerToken;
+        return toBeToppedUp;
+    }
+
+    function getProjectTokenToppedUpAmt() public view returns (uint256) {
+        return IERC20(getProjectTokenAddress()).balanceOf(address(this));
     }
 
     function getReserveInvestment() public view returns (uint256) {
@@ -469,6 +502,14 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail.endTime;
     }
 
+    function getProjectTokenAddress() public view returns (address) {
+        return projectDetail.tokenAddress;
+    }
+
+    function getVAssetAddress() public view returns (address) {
+        return projectDetail.acceptedVAsset;
+    }
+
     function getWithdrawAmount() public view returns (uint256) {
         uint256 raisedAmount = getProjectRaisedAmount();
         uint256 IDOFeeAmount = (raisedAmount * IDO_FEE_RATE) /
@@ -478,8 +519,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     function getRedeemAmount() public view returns (uint256) {
-        uint256 investAmount = userDepositAmount[_msgSender()]; 
-        uint256 redeemAmount = (investAmount * (10 ** RATE_DECIMALS)) / projectDetail.pricePerToken;
+        uint256 investAmount = userDepositAmount[_msgSender()];
+        uint256 redeemAmount = (investAmount * (10 ** RATE_DECIMALS)) /
+            projectDetail.pricePerToken;
         return redeemAmount;
     }
 
