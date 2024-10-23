@@ -168,6 +168,10 @@ interface IProjectPool {
 
     function getProjectTokenToppedUpAmt() external view returns (uint256);
 
+	function getProjectStartTime() external view returns (uint256);
+
+	function getProjectEndTime() external view returns (uint256);
+
     /**
      * @notice Allows the project owner to withdraw funds after the project has ended.
      */
