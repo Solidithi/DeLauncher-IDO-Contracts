@@ -106,6 +106,8 @@ interface IProjectPool {
      */
     function getProjectHardCapAmount() external view returns (uint256);
 
+	function getProjectSoftCapAmount() external view returns (uint256);
+
     /**
      * @notice Checks if a user is whitelisted for the project.
      * @param _address The address to check.
