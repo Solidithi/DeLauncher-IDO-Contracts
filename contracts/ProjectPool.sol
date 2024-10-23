@@ -216,9 +216,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         if (minInvest <= 0) {
             revert InvalidProjectMinInvestment();
         }
-        if (startTime < block.timestamp || startTime > endTime) {
-            revert InvalidProjectTimeframe();
-        }
+        // if (startTime < block.timestamp || startTime > endTime) {
+        //     revert InvalidProjectTimeframe();
+        // }
 
         projectDetail.projectOwner = projectOwner;
         projectDetail.tokenAddress = tokenAddress;
