@@ -135,8 +135,6 @@ interface IProjectPool {
 
     function isProjectFullyToppedUp() external view returns (bool);
 
-	function isProjectSoftCapReached() external view returns (bool);
-
     /**
      * @notice Returns the remaining time until the project ends.
      * @return uint256 The time left in seconds until the project ends.
