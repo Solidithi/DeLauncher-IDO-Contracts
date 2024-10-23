@@ -99,12 +99,12 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     modifier isInIDOTimeFrame() {
-        if (block.timestamp < projectDetail.startTime) {
-            revert ProjectIDOHasNotStarted();
-        }
-        if (block.timestamp > projectDetail.endTime) {
-            revert ProjectIDOHasEnded();
-        }
+        // if (block.timestamp < projectDetail.startTime) {
+        //     revert ProjectIDOHasNotStarted();
+        // }
+        // if (block.timestamp > projectDetail.endTime) {
+        //     revert ProjectIDOHasEnded();
+        // }
         _;
     }
 
@@ -123,9 +123,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     modifier isInWithdrawTimeFrame() {
-        if (block.timestamp < projectDetail.endTime) {
-            revert ProjectStillActive();
-        }
+        // if (block.timestamp < projectDetail.endTime) {
+        //     revert ProjectStillActive();
+        // }
         _;
     }
 
