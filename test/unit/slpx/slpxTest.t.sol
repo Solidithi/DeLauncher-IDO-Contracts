@@ -37,20 +37,21 @@ contract slpxBossTest is Test {
 
         console.log("Test setup complete");
     }
+
     function test_WithdrawWithRedeemAsset() public {
-    // Create a new project pool with bigBoss as the owner
-    uint256 customProjectId = factory.createProjectPool(
-        address(projectToken), // Using MockProjectToken
-        1,
-        block.timestamp,
-        block.timestamp + 1 minutes,
-        (1 * (10 ** vToken.decimals())) / 4,
-        1 * (10 ** vToken.decimals()),
-        10000 * (10 ** vToken.decimals()),   
-        1 * (10 ** vToken.decimals()),
-        (1 * (10 ** 4)) / 10,
-        address(vToken)
-    );
+        // Create a new project pool with bigBoss as the owner
+        uint256 customProjectId = factory.createProjectPool(
+            address(projectToken), // Using MockProjectToken
+            1,
+            block.timestamp,
+            block.timestamp + 1 minutes,
+            (1 * (10 ** vToken.decimals())) / 4,
+            1 * (10 ** vToken.decimals()),
+            10000 * (10 ** vToken.decimals()),   
+            1 * (10 ** vToken.decimals()),
+            (1 * (10 ** 4)) / 10,
+            address(vToken)
+        );
 
     // Fetching the created pool's address
     address payable poolAddress = payable(factory.getProjectPoolAddress(customProjectId)); // Ensure pool address is payable
@@ -81,14 +82,12 @@ contract slpxBossTest is Test {
     // Debugging the allowance before attempting withdrawal
     uint256 withdrawAmount = customPool.getWithdrawAmount();
     console.log("Withdraw Amount: ", withdrawAmount);
-    console.log("Allowance Before: ", vToken.allowance(projectOwner, address(customPool)));
+    console.log("Allowance Before: ", vToken.allowance(mockSlpxAddr, address(customPool)));
 
-    // Prank as the project owner to approve the allowance
     vm.prank(projectOwner); 
-    uint256 amountToWithdraw = customPool.getWithdrawAmount();
-    vToken.approve(mockSlpxAddr, amountToWithdraw);
+    vToken.approve(mockSlpxAddr, withdrawAmount);
     // Check allowance again after approval
-    console.log("Allowance After: ", vToken.allowance(projectOwner, address(customPool)));
+    console.log("Allowance After: ", vToken.allowance(mockSlpxAddr, address(customPool)));
 
     // Now call the withdraw function
     customPool.slpxWithdrawFund(); // Assuming slpxWithdrawFund sends Ether back
