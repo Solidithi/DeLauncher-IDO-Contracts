@@ -469,7 +469,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail.softCapAmount;
     }
 
-    function getProjectsoftCapReached() public view returns (bool) {
+    function getProjectSoftCapReached() public view returns (bool) {
         return projectDetail.raisedAmount >= projectDetail.softCapAmount;
     }
 
