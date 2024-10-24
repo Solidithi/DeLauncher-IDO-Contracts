@@ -282,18 +282,19 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     function slpxWithdrawFund() 
-        external 
+        external
         onlyProjectOwner
         nonReentrant
         isInWithdrawTimeFrame
         softCapReached
         notWithdraw
+        payable
     {
         uint256 withdrawAmount = getWithdrawAmount();
 
         hasWithdrawn = true;
 
-        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, _msgSender());
+        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, payable(_msgSender()));
 
         emit ProjectWithdrawn(
             _msgSender(),
@@ -301,6 +302,8 @@ contract ProjectPool is Ownable, ReentrancyGuard {
             withdrawAmount
         );
     }
+    receive() external payable {}
+    fallback() external payable {}
 
     function investProject(
         uint256 amount
@@ -572,6 +575,10 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     function getProjectWithdrawState() public view returns (bool) {
         return hasWithdrawn;
+    }
+
+    function getSlpxContractAdr() public view returns (address) {
+        return address(slpxContract);
     }
 
     ////////////////////////////////////////////////////

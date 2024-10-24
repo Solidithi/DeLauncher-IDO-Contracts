@@ -1,58 +1,103 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {MockVToken} from "../../../script/ProjectPoolTestUtil.s.sol";
+import {ProjectPool} from "../../../contracts/ProjectPool.sol"; 
+import {ProjectPoolFactory} from "../../../contracts/ProjectPoolFactory.sol";
+import {ProjectPoolTestUtil, MockVToken, MockProjectToken} from "../../../script/ProjectPoolTestUtil.s.sol";
 import {MockSLPX} from "../../../script/slpx.s.sol";
 import {console} from "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 
-contract MockSLPXTest is Test {
+contract slpxBossTest is Test {
     MockVToken vToken;
     MockSLPX mockSLPX;
+    ProjectPool pool;
+    ProjectPoolFactory factory;
+    ProjectPoolTestUtil testUtil;
+    ProjectPool.ProjectDetail pr;
+    address mockSlpxAddr;
 
-    address user1 = address(0x01); 
+    address payable bigBoss = payable(address(0x01)); // Payable address for bigBoss
+    MockProjectToken projectToken; // Declaring projectToken
 
     function setUp() public {
         vToken = new MockVToken();
+        projectToken = new MockProjectToken(); // Initializing projectToken
 
         mockSLPX = new MockSLPX{value: 10 ether}(vToken);
 
-        vm.deal(user1, 5 ether);
+        vm.deal(bigBoss, 5 ether); // Fund bigBoss with 5 ether
+        mockSlpxAddr = address(mockSLPX); // Save MockSLPX address
+
+        testUtil = new ProjectPoolTestUtil();
+        factory = new ProjectPoolFactory(mockSlpxAddr);
+
+        pool = testUtil.createTestProjectPool(factory);
+        pr = pool.getProjectDetail();
 
         console.log("Test setup complete");
     }
+    function test_WithdrawWithRedeemAsset() public {
+    // Create a new project pool with bigBoss as the owner
+    uint256 customProjectId = factory.createProjectPool(
+        address(projectToken), // Using MockProjectToken
+        1,
+        block.timestamp,
+        block.timestamp + 1 minutes,
+        (1 * (10 ** vToken.decimals())) / 4,
+        1 * (10 ** vToken.decimals()),
+        10000 * (10 ** vToken.decimals()),   
+        1 * (10 ** vToken.decimals()),
+        (1 * (10 ** 4)) / 10,
+        address(vToken)
+    );
 
-    function testMintVNativeAsset() public {
-        vm.startPrank(user1); 
-        assertEq(vToken.balanceOf(user1), 0);
-        mockSLPX.mintVNativeAsset{value: 1 ether}(user1, "Mint vTokens");
-        uint256 user1VTokenBalance = vToken.balanceOf(user1);
-        assertEq(user1VTokenBalance, 1 ether);
-        vm.stopPrank();
+    // Fetching the created pool's address
+    address payable poolAddress = payable(factory.getProjectPoolAddress(customProjectId)); // Ensure pool address is payable
+    ProjectPool customPool = ProjectPool(poolAddress);
 
-        console.log("Mint vNativeAsset successful");
-    }
+    address investor = address(0x021);
 
-    function testRedeemAssetUsingCall() public {
-        vm.startPrank(user1);
+    // Fund the investor and set allowances
+    vToken.freeMoneyForEveryone(investor, customPool.getProjectMaxInvest());
 
-        uint256 contractBalanceBeforeMint = address(mockSLPX).balance;
-        mockSLPX.mintVNativeAsset{value: 2 ether}(user1, "Mint vTokens");
+    // Prank as investor to approve spending and invest
+    vm.prank(investor);
+    vToken.approve(address(customPool), customPool.getProjectMaxInvest());
 
-        uint256 userVTokenBalance = vToken.balanceOf(user1);
-        console.log(userVTokenBalance);
+    // Whitelist the investor and have them invest the amount needed
+    testUtil.whitelistUser(customPool, investor);
+    uint256 amountToInvest = customPool.getProjectMaxInvest() - customPool.getUserDepositAmount(investor);
+    testUtil.userInvest(customPool, investor, amountToInvest);
 
-        assertEq(address(mockSLPX).balance, contractBalanceBeforeMint + 2 ether); 
+    // Fast forward time to simulate project ending
+    uint256 rightNow = block.timestamp;
+    vm.warp(rightNow + 2 minutes); // Simulate after the project duration
 
-        vToken.approve(address(mockSLPX), 1 ether);
-        uint256 userBalanceBefore = user1.balance; 
-        uint256 contractBalanceBeforeRedeem = address(mockSLPX).balance; 
-        mockSLPX.redeemAsset(address(vToken), 1 ether, payable(user1));
+    // Capture bigBoss's initial balance before withdrawal
+    address projectOwner = customPool.getProjectOwner();
+    uint256 poBal = address(projectOwner).balance;
 
-        assertEq(user1.balance, userBalanceBefore + 1 ether); 
+    // Debugging the allowance before attempting withdrawal
+    uint256 withdrawAmount = customPool.getWithdrawAmount();
+    console.log("Withdraw Amount: ", withdrawAmount);
+    console.log("Allowance Before: ", vToken.allowance(projectOwner, address(customPool)));
 
-        assertEq(address(mockSLPX).balance, contractBalanceBeforeRedeem - 1 ether);
+    // Prank as the project owner to approve the allowance
+    vm.prank(projectOwner); 
+    uint256 amountToWithdraw = customPool.getWithdrawAmount();
+    vToken.approve(mockSlpxAddr, amountToWithdraw);
+    // Check allowance again after approval
+    console.log("Allowance After: ", vToken.allowance(projectOwner, address(customPool)));
 
-        vm.stopPrank();
-    }
+    // Now call the withdraw function
+    customPool.slpxWithdrawFund(); // Assuming slpxWithdrawFund sends Ether back
+
+    // Assert that the balance has changed
+    assert(poBal != address(projectOwner).balance);
+
+    // Reset the timestamp
+    vm.warp(rightNow);
+}
+
 }

@@ -60,7 +60,7 @@ contract ProjectPoolFactory is Ownable {
         );
 
         // update states
-        projectPools[newProjectId] = address(newProjectPool);
+        projectPools[newProjectId] = payable(address(newProjectPool));
         poolIsValid[address(newProjectPool)] = true;
         currentProjectId++;
 
@@ -81,8 +81,8 @@ contract ProjectPoolFactory is Ownable {
 
     function getProjectPoolAddress(
         uint256 projectId
-    ) public view validProjectId(projectId) returns (address) {
-        return projectPools[projectId];
+    ) public view validProjectId(projectId) returns (address payable) {
+        return payable(projectPools[projectId]);
     }
 
     function checkPoolIsValid(address poolAddress) public view returns (bool) {

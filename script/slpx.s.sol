@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {MockVToken} from "./ProjectPoolTestUtil.s.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 
 contract MockSLPX {
@@ -27,18 +26,12 @@ contract MockSLPX {
         console.log("vToken minted to address:", receiver, remark);
     }
 
-    function isContract(address addr) internal view returns (bool) {
-        uint32 size;
-        assembly { size := extcodesize(addr) }
-        return size > 0;
-    }
-
     function redeemAsset(address vAssetAddress, uint256 amount, address payable receiver) external {
    
         require(vAssetAddress == address(vToken), "Invalid vAsset address");
         require(vToken.balanceOf(msg.sender) >= amount, "Insufficient vToken balance");
         require(address(this).balance >= amount, "Contract does not have enough native tokens");
-        require(!isContract(receiver), "Receiver cannot be a contract without payable fallback");
+        // require(!isContract(receiver), "Receiver cannot be a contract without payable fallback");
 
         bool success = vToken.transferFrom(msg.sender, address(this), amount);
         console.log("Transfer from user to contract success:", success);

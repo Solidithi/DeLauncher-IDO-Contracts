@@ -77,7 +77,7 @@ contract ProjectPoolTestUtil is Script {
             rewardRate,
             acceptedVAsset
         );
-		address poolAddress = factory.getProjectPoolAddress(projectId);
+		address payable poolAddress = factory.getProjectPoolAddress(projectId);
 		return ProjectPool(poolAddress);
     }
 
@@ -100,3 +100,60 @@ contract ProjectPoolTestUtil is Script {
 		vm.stopPrank();
 	}
 }
+
+// contract PoolDeployContract {
+//     ProjectPoolFactory public factory;
+//     ProjectPool public pool;
+//     address public owner;
+//     bool public inReentrancy;
+
+//     constructor(ProjectPoolFactory _factory) payable {
+//         factory = _factory;
+//         owner = msg.sender;
+//     }
+
+//     function createPool(
+//         address tokenAddress,
+//         uint256 pricePerToken,
+//         uint256 startTime,
+//         uint256 endTime,
+//         uint256 minInvest,
+//         uint256 maxInvest,
+//         uint256 hardCapAmount,
+//         uint256 softCapAmount,
+//         uint256 rewardRate,
+//         address acceptedVAsset
+//     ) external {
+//         uint256 poolId = factory.createProjectPool(
+//             tokenAddress,
+//             pricePerToken,
+//             startTime,
+//             endTime,
+//             minInvest,
+//             maxInvest,
+//             hardCapAmount,
+//             softCapAmount,
+//             rewardRate,
+//             acceptedVAsset
+//         );
+        
+//         // Explicitly cast poolAddress to payable
+//         address payable poolAddress = payable(factory.getProjectPoolAddress(poolId));
+//         pool = ProjectPool(poolAddress); // Now the address is payable
+//     }
+
+//     function getPoolOwner() public view returns (address) {
+//         return pool.getProjectOwner();
+//     }
+
+//     // Mark the withdraw function as payable
+//     function withdraw() external payable {
+//         pool.slpxWithdrawFund(); 
+//     }
+
+//     // Add a receive function to accept ETH
+//     receive() external payable {}
+
+//     // Optional: Fallback function if needed for other calls
+//     fallback() external payable {}
+// }
