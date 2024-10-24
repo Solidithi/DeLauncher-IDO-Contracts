@@ -15,8 +15,6 @@ contract MockSLPX {
         require(msg.value > 0, "Must send some native tokens to contract");
 
         vToken.freeMoneyForEveryone(address(this), 100000 * 10**18); 
-
-        console.log("Contract initialized with vToken and native token reserve");
     }
 
     function mintVNativeAsset(address receiver, string memory remark) external payable {

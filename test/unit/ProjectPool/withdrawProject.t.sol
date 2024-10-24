@@ -5,10 +5,9 @@ import "forge-std/Test.sol";
 import {ProjectPool} from "../../../contracts/ProjectPool.sol"; 
 import {ProjectPoolFactory} from "../../../contracts/ProjectPoolFactory.sol";
 import {ProjectPoolTestUtil, MockVToken, MockProjectToken, MockVTokenButReturnFalseOnTransfer, AttackerContract} from "../../../script/ProjectPoolTestUtil.s.sol";
+import {MockSLPX} from "../../../script/slpx.s.sol";
 import {console} from "forge-std/console.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {IERC20Errors} from "@openzeppelin/interfaces/draft-IERC6093.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
 import {Script} from "forge-std/Script.sol";
 
@@ -18,11 +17,17 @@ contract WithdrawTest is Test, Script {
     ProjectPoolFactory factory;
     ProjectPoolTestUtil testUtil;
     ProjectPool.ProjectDetail pr;
-    address mockSlpxAddr = address(0x01);
+    MockVToken vTokForSlpx;
+    MockSLPX mockSlpx;
+    address mockSlpxAddr;
 
     constructor() {
+        vTokForSlpx = new MockVToken();
+        mockSlpx = new MockSLPX{value: 10 ether}(vTokForSlpx);
+        mockSlpxAddr = address(mockSlpx);
         testUtil = new ProjectPoolTestUtil();
         factory = new ProjectPoolFactory(mockSlpxAddr);
+        
     }
 
     function setUp() public {
@@ -175,12 +180,7 @@ contract WithdrawTest is Test, Script {
         uint256 projectBalanceAfterWithdraw = MockVToken(vToken).balanceOf(poolAddress);
 
 		// asertion
-        vm.expectRevert(abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientBalance.selector,
-        poolAddress,  
-        projectBalanceAfterWithdraw,                            
-        customPool.getWithdrawAmount()                       
-        ));
+        vm.expectRevert(ProjectPool.AlreadyWithdraw.selector);
 
         customPool.withdrawFund();
 
