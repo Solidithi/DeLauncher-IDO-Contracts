@@ -528,6 +528,11 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     function getProjectOwner() public view returns (address) {
         return projectDetail.projectOwner;
     }
+
+    function getPricePerToken() public view returns (uint256) {
+        return projectDetail.pricePerToken;
+    }
+
     ////////////////////////////////////////////////////
     //////////////// SETTER FUNCTIONS /////////////////
     //////////////////////////////////////////////////
