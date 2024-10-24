@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
+import "../interfaces/ISlpx.sol";
 
 contract ProjectPool is Ownable, ReentrancyGuard {
     struct ProjectDetail {
@@ -50,9 +51,11 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     address public immutable slpxAddress;
 
     // Project ID value counter
-
     mapping(address => uint256) private userDepositAmount;
     mapping(address => bool) private whitelistedAddresses;
+
+    // SLPX contract
+    ISlpx slpxContract = ISlpx(projectDetail.slpxAddress);
     ////////////////////////////////////////////////////
     //////////////// CONTRACT EVENTS //////////////////
     //////////////////////////////////////////////////
@@ -257,6 +260,24 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         if (!success) {
             revert ERC20TransferFailed();
         }
+
+        emit ProjectWithdrawn(
+            _msgSender(),
+            projectDetail.projectId,
+            withdrawAmount
+        );
+    }
+
+    function slpxWithdrawFund() 
+        external 
+        onlyProjectOwner
+        nonReentrant
+        isInWithdrawTimeFrame
+        SoftCapReached
+    {
+        uint256 withdrawAmount = getWithdrawAmount();
+
+        slpxContract.redeemAsset(projectDetail.vAssetAddress, withdrawAmount, _msgSender());
 
         emit ProjectWithdrawn(
             _msgSender(),
