@@ -38,8 +38,8 @@ contract MockSLPX {
     function redeemAsset(address vAssetAddress, uint256 amount, address payable receiver) external {
    
         require(vAssetAddress == address(vToken), "Invalid vAsset address");
-        require(userBalance >= amount, "Insufficient vToken balance");
-        require(contractBalance >= amount, "Contract does not have enough native tokens");
+        require(vToken.balanceOf(msg.sender) >= amount, "Insufficient vToken balance");
+        require(address(this).balance >= amount, "Contract does not have enough native tokens");
         require(!isContract(receiver), "Receiver cannot be a contract without payable fallback");
 
         bool success = vToken.transferFrom(msg.sender, address(this), amount);

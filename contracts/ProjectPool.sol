@@ -49,13 +49,12 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     // Address of Bifrost SLPX contract
     address public immutable slpxAddress;
+    ISlpx public immutable slpxContract;
 
     // Project ID value counter
     mapping(address => uint256) private userDepositAmount;
     mapping(address => bool) private whitelistedAddresses;
-
-    // SLPX contract
-    ISlpx slpxContract = ISlpx(projectDetail.slpxAddress);
+    
     ////////////////////////////////////////////////////
     //////////////// CONTRACT EVENTS //////////////////
     //////////////////////////////////////////////////
@@ -236,6 +235,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         projectDetail.acceptedVAsset = acceptedVAsset;
         projectDetail.rewardRate = rewardRate;
         slpxAddress = _slpxAddress;
+        slpxContract = ISlpx(slpxAddress);
     }
 
     /**
@@ -277,7 +277,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     {
         uint256 withdrawAmount = getWithdrawAmount();
 
-        slpxContract.redeemAsset(projectDetail.vAssetAddress, withdrawAmount, _msgSender());
+        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, _msgSender());
 
         emit ProjectWithdrawn(
             _msgSender(),
