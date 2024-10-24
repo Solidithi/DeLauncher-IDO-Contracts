@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import {ProjectPool} from "../../../contracts/ProjectPool.sol"; 
 import {ProjectPoolFactory} from "../../../contracts/ProjectPoolFactory.sol";
-import {ProjectPoolTestUtil, MockVToken, MockProjectToken, MockVTokenButReturnFalseOnTransfer, AttackerContract} from "../../../script/ProjectPoolTestUtil.s.sol";
+import {ProjectPoolTestUtil, MockVToken, MockProjectToken, MockVTokenButReturnFalseOnTransfer} from "../../../script/ProjectPoolTestUtil.s.sol";
 import {MockSLPX} from "../../../script/slpx.s.sol";
 import {console} from "forge-std/console.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
@@ -176,9 +176,6 @@ contract WithdrawTest is Test, Script {
         vm.warp(timetravel);
 
         customPool.withdrawFund();
-
-        uint256 projectBalanceAfterWithdraw = MockVToken(vToken).balanceOf(poolAddress);
-
 		// asertion
         vm.expectRevert(ProjectPool.AlreadyWithdraw.selector);
 

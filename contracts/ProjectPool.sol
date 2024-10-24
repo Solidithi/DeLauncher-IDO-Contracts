@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 // import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -48,11 +48,10 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     uint256 public constant IDO_FEE_RATE = 50; // equals to 0.005 if RATE_DECIMALS is 4
 
     // Address of Bifrost SLPX contract
-    address public immutable slpxAddress;
     ISlpx public immutable slpxContract;
 
     // Withdraw state
-    bool public withdrawed;
+    bool public hasWithdrawn;
 
     // Project ID value counter
     mapping(address => uint256) private userDepositAmount;
@@ -142,7 +141,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     modifier notWithdraw(){
-        if (withdrawed){
+        if (hasWithdrawn){
             revert AlreadyWithdraw();
         }
         _;
@@ -246,9 +245,8 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         projectDetail.softCapAmount = softCapAmount;
         projectDetail.acceptedVAsset = acceptedVAsset;
         projectDetail.rewardRate = rewardRate;
-        withdrawed = false;
-        slpxAddress = _slpxAddress;
-        slpxContract = ISlpx(slpxAddress);
+        hasWithdrawn = false;
+        slpxContract = ISlpx(_slpxAddress);
     }
 
     /**
@@ -266,6 +264,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     {
         uint256 withdrawAmount = getWithdrawAmount();
 
+        hasWithdrawn = true;
         bool success = IERC20(projectDetail.acceptedVAsset).transfer(
             _msgSender(),
             withdrawAmount
@@ -274,8 +273,6 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         if (!success) {
             revert ERC20TransferFailed();
         }
-
-        withdrawed = true;
 
         emit ProjectWithdrawn(
             _msgSender(),
@@ -294,9 +291,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     {
         uint256 withdrawAmount = getWithdrawAmount();
 
-        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, _msgSender());
+        hasWithdrawn = true;
 
-        withdrawed = true;
+        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, _msgSender());
 
         emit ProjectWithdrawn(
             _msgSender(),
@@ -574,7 +571,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     }
 
     function getProjectWithdrawState() public view returns (bool) {
-        return withdrawed;
+        return hasWithdrawn;
     }
 
     ////////////////////////////////////////////////////
