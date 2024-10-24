@@ -199,4 +199,6 @@ interface IProjectPool {
      * @notice Allows users to request a refund of their investment if applicable.
      */
     function refundToken() external;
+
+	function getPricePerToken() external view returns (uint256);
 }
