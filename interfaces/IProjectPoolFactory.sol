@@ -61,6 +61,8 @@ interface IProjectPoolFactory {
      */    
     function getProjectPoolAddress(uint256 projectId) external view returns (address);
 
+	function getCurrentProjectId() external view returns (uint256);
+
     /**
      * 
      * @notice check if pool is valid
