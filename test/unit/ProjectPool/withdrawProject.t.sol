@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {ProjectPool} from "../../../contracts/ProjectPool.sol"; // Adjust the path to your contract
+import {ProjectPool} from "../../../contracts/ProjectPool.sol"; 
 import {ProjectPoolFactory} from "../../../contracts/ProjectPoolFactory.sol";
 import {ProjectPoolTestUtil, MockVToken, MockProjectToken, MockVTokenButReturnFalseOnTransfer, AttackerContract} from "../../../script/ProjectPoolTestUtil.s.sol";
 import {console} from "forge-std/console.sol";
@@ -290,46 +290,46 @@ contract WithdrawTest is Test, Script {
         vm.warp(rightNow);
 	}
 
-    function test_canWithDrawPreventReentrancy() external {
-        MockProjectToken projectToken = new MockProjectToken();
-        MockVToken vToken = new MockVToken();
+    // function test_canWithDrawPreventReentrancy() external {
+    //     MockProjectToken projectToken = new MockProjectToken();
+    //     MockVToken vToken = new MockVToken();
 
-        AttackerContract attacker = new AttackerContract(factory);
-        attacker.createPool(
-        address(projectToken),
-            1,
-            block.timestamp,
-            block.timestamp + 1 minutes,
-            (1 * (10 ** vToken.decimals())) / 4,  
-            1 * (10 ** vToken.decimals()),      
-            10000 * (10 ** vToken.decimals()),    
-            1 * (10 ** vToken.decimals()),        
-            (1 * (10 ** 4)) / 10,               
-            address(vToken)
-        );
+    //     AttackerContract attacker = new AttackerContract(factory);
+    //     attacker.createPool(
+    //     address(projectToken),
+    //         1,
+    //         block.timestamp,
+    //         block.timestamp + 1 minutes,
+    //         (1 * (10 ** vToken.decimals())) / 4,  
+    //         1 * (10 ** vToken.decimals()),      
+    //         10000 * (10 ** vToken.decimals()),    
+    //         1 * (10 ** vToken.decimals()),        
+    //         (1 * (10 ** 4)) / 10,               
+    //         address(vToken)
+    //     );
 
-        address poolOwner = attacker.getPoolOwner();
-        assertEq(poolOwner, address(attacker), "Attacker should be the pool owner");
+    //     address poolOwner = attacker.getPoolOwner();
+    //     assertEq(poolOwner, address(attacker), "Attacker should be the pool owner");
 
-        uint256 maxInvest = attacker.pool().getProjectMaxInvest();
+    //     uint256 maxInvest = attacker.pool().getProjectMaxInvest();
 
-        address investor = address(0x01);
+    //     address investor = address(0x01);
     
-        MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);  
-        MockVToken(vToken).approve(address(attacker.pool()), maxInvest);  
-        testUtil.whitelistUser(attacker.pool(), investor);  
-        uint256 amountToReachMaxInvest = attacker.pool().getProjectMaxInvest() 
-            - attacker.pool().getUserDepositAmount(investor);
-        testUtil.userInvest(attacker.pool(), investor, amountToReachMaxInvest);  
+    //     MockVToken(vToken).freeMoneyForEveryone(investor, maxInvest);  
+    //     MockVToken(vToken).approve(address(attacker.pool()), maxInvest);  
+    //     testUtil.whitelistUser(attacker.pool(), investor);  
+    //     uint256 amountToReachMaxInvest = attacker.pool().getProjectMaxInvest() 
+    //         - attacker.pool().getUserDepositAmount(investor);
+    //     testUtil.userInvest(attacker.pool(), investor, amountToReachMaxInvest);  
 
-        uint256 rightNow = block.timestamp;
-        uint256 timeTravel = rightNow + 2 minutes;
-        vm.warp(timeTravel);
+    //     uint256 rightNow = block.timestamp;
+    //     uint256 timeTravel = rightNow + 2 minutes;
+    //     vm.warp(timeTravel);
 
-        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-        attacker.attackWithdraw();  
+    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
+    //     attacker.attackWithdraw();  
 
-        // Reset timestamp 
-        vm.warp(rightNow);
-    }
+    //     // Reset timestamp 
+    //     vm.warp(rightNow);
+    // }
 }

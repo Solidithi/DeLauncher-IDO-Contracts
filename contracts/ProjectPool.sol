@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {Ownable} from "@openzeppelin/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
+import "../interfaces/ISlpx.sol";
 
 contract ProjectPool is Ownable, ReentrancyGuard {
     struct ProjectDetail {
@@ -48,11 +49,15 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
     // Address of Bifrost SLPX contract
     address public immutable slpxAddress;
+    ISlpx public immutable slpxContract;
+
+    // Withdraw state
+    bool public withdrawed;
 
     // Project ID value counter
-
     mapping(address => uint256) private userDepositAmount;
     mapping(address => bool) private whitelistedAddresses;
+    
     ////////////////////////////////////////////////////
     //////////////// CONTRACT EVENTS //////////////////
     //////////////////////////////////////////////////
@@ -129,12 +134,20 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier SoftCapReached() {
+    modifier softCapReached() {
         if (projectDetail.raisedAmount < projectDetail.softCapAmount) {
             revert SoftCapNotReach();
         }
         _;
     }
+
+    modifier notWithdraw(){
+        if (withdrawed){
+            revert AlreadyWithdraw();
+        }
+        _;
+    }
+
     ////////////////////////////////////////////////////
     //////////////// CONTRACT ERRORS //////////////////
     //////////////////////////////////////////////////
@@ -183,6 +196,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
      */
     error ProjectStillActive();
     error SoftCapNotReach();
+    error AlreadyWithdraw();
 
     ////////////////////////////////////////////////////
     //////////// TRANSACTIONAL FUNCTIONS //////////////
@@ -232,7 +246,9 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         projectDetail.softCapAmount = softCapAmount;
         projectDetail.acceptedVAsset = acceptedVAsset;
         projectDetail.rewardRate = rewardRate;
+        withdrawed = false;
         slpxAddress = _slpxAddress;
+        slpxContract = ISlpx(slpxAddress);
     }
 
     /**
@@ -245,7 +261,8 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         onlyProjectOwner
         nonReentrant
         isInWithdrawTimeFrame
-        SoftCapReached
+        softCapReached
+        notWithdraw
     {
         uint256 withdrawAmount = getWithdrawAmount();
 
@@ -257,6 +274,29 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         if (!success) {
             revert ERC20TransferFailed();
         }
+
+        withdrawed = true;
+
+        emit ProjectWithdrawn(
+            _msgSender(),
+            projectDetail.projectId,
+            withdrawAmount
+        );
+    }
+
+    function slpxWithdrawFund() 
+        external 
+        onlyProjectOwner
+        nonReentrant
+        isInWithdrawTimeFrame
+        softCapReached
+        notWithdraw
+    {
+        uint256 withdrawAmount = getWithdrawAmount();
+
+        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, _msgSender());
+
+        withdrawed = true;
 
         emit ProjectWithdrawn(
             _msgSender(),
@@ -347,7 +387,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     function redeemTokens()
         external
         isInWithdrawTimeFrame
-        SoftCapReached
+        softCapReached
         needToBeWhitelisted(_msgSender())
         nonReentrant
     {
@@ -429,7 +469,7 @@ contract ProjectPool is Ownable, ReentrancyGuard {
         return projectDetail.softCapAmount;
     }
 
-    function getProjectSoftCapReached() public view returns (bool) {
+    function getProjectsoftCapReached() public view returns (bool) {
         return projectDetail.raisedAmount >= projectDetail.softCapAmount;
     }
 
@@ -528,6 +568,15 @@ contract ProjectPool is Ownable, ReentrancyGuard {
     function getProjectOwner() public view returns (address) {
         return projectDetail.projectOwner;
     }
+
+    function getPricePerToken() public view returns (uint256) {
+        return projectDetail.pricePerToken;
+    }
+
+    function getProjectWithdrawState() public view returns (bool) {
+        return withdrawed;
+    }
+
     ////////////////////////////////////////////////////
     //////////////// SETTER FUNCTIONS /////////////////
     //////////////////////////////////////////////////
