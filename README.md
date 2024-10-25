@@ -6,12 +6,12 @@ Defrost Launcher is a platform for facilitating Initial DEX Offerings (IDOs) on 
 </p>
 
 ---
-### Table of Contents
-- [Overview](## About Defrost Launcher ❄)
-- [Features](## Features ☕)
-- [Technical](## Technologies Used 💻)
-- [Team](## Team Core 🎮)
-- [Learn More](## Learn more)
+### Table of Contents 🏆
+- [Overview](#About-Defrost-Launcher-❄)
+- [Features](#Features-☕)
+- [Technical](#Technologies-Used-💻)
+- [Team](#Team-Core-🎮)
+- [Learn More](#-Learn-more)
 
 ## About Defrost Launcher ❄
 
