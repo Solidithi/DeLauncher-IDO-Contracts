@@ -31,10 +31,8 @@ contract MockSLPX {
         require(vAssetAddress == address(vToken), "Invalid vAsset address");
         require(vToken.balanceOf(msg.sender) >= amount, "Insufficient vToken balance");
         require(address(this).balance >= amount, "Contract does not have enough native tokens");
-        // require(!isContract(receiver), "Receiver cannot be a contract without payable fallback");
 
         bool success = vToken.transferFrom(msg.sender, address(this), amount);
-        console.log("Transfer from user to contract success:", success);
         require(success, "Token transfer failed");
 
         (bool sent, ) = receiver.call{value: amount}("");

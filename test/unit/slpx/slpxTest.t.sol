@@ -10,6 +10,7 @@ import {Test} from "forge-std/Test.sol";
 
 contract slpxBossTest is Test {
     MockVToken vToken;
+    MockProjectToken projectToken;
     MockSLPX mockSLPX;
     ProjectPool pool;
     ProjectPoolFactory factory;
@@ -17,17 +18,16 @@ contract slpxBossTest is Test {
     ProjectPool.ProjectDetail pr;
     address mockSlpxAddr;
 
-    address payable bigBoss = payable(address(0x01)); // Payable address for bigBoss
-    MockProjectToken projectToken; // Declaring projectToken
+    address payable bigBoss = payable(address(0x01)); 
 
     function setUp() public {
         vToken = new MockVToken();
-        projectToken = new MockProjectToken(); // Initializing projectToken
+        projectToken = new MockProjectToken(); 
 
         mockSLPX = new MockSLPX{value: 10 ether}(vToken);
 
-        vm.deal(bigBoss, 5 ether); // Fund bigBoss with 5 ether
-        mockSlpxAddr = address(mockSLPX); // Save MockSLPX address
+        vm.deal(bigBoss, 5 ether); 
+        mockSlpxAddr = address(mockSLPX); 
 
         testUtil = new ProjectPoolTestUtil();
         factory = new ProjectPoolFactory(mockSlpxAddr);
@@ -39,9 +39,8 @@ contract slpxBossTest is Test {
     }
 
     function test_WithdrawWithRedeemAsset() public {
-        // Create a new project pool with bigBoss as the owner
         uint256 customProjectId = factory.createProjectPool(
-            address(projectToken), // Using MockProjectToken
+            address(projectToken), 
             1,
             block.timestamp,
             block.timestamp + 1 minutes,
@@ -51,52 +50,43 @@ contract slpxBossTest is Test {
             1 * (10 ** vToken.decimals()),
             (1 * (10 ** 4)) / 10,
             address(vToken)
-        );
+         );
 
-    // Fetching the created pool's address
-    address payable poolAddress = payable(factory.getProjectPoolAddress(customProjectId)); // Ensure pool address is payable
-    ProjectPool customPool = ProjectPool(poolAddress);
+        address payable poolAddress = payable(factory.getProjectPoolAddress(customProjectId)); 
+        ProjectPool customPool = ProjectPool(poolAddress);
 
-    address investor = address(0x021);
+        address investor = address(0x021);
 
-    // Fund the investor and set allowances
-    vToken.freeMoneyForEveryone(investor, customPool.getProjectMaxInvest());
+        vToken.freeMoneyForEveryone(investor, customPool.getProjectMaxInvest());
 
-    // Prank as investor to approve spending and invest
-    vm.prank(investor);
-    vToken.approve(address(customPool), customPool.getProjectMaxInvest());
+        vm.prank(investor);
+        vToken.approve(address(customPool), customPool.getProjectMaxInvest());
 
-    // Whitelist the investor and have them invest the amount needed
-    testUtil.whitelistUser(customPool, investor);
-    uint256 amountToInvest = customPool.getProjectMaxInvest() - customPool.getUserDepositAmount(investor);
-    testUtil.userInvest(customPool, investor, amountToInvest);
+        testUtil.whitelistUser(customPool, investor);
+        uint256 amountToInvest = customPool.getProjectMaxInvest() - customPool.getUserDepositAmount(investor);
+        testUtil.userInvest(customPool, investor, amountToInvest);
 
-    // Fast forward time to simulate project ending
-    uint256 rightNow = block.timestamp;
-    vm.warp(rightNow + 2 minutes); // Simulate after the project duration
+        uint256 rightNow = block.timestamp;
+        vm.warp(rightNow + 2 minutes);
 
-    // Capture bigBoss's initial balance before withdrawal
-    address projectOwner = customPool.getProjectOwner();
-    uint256 poBal = address(projectOwner).balance;
+        address projectOwner = customPool.getProjectOwner();
+        uint256 poBalBefore = address(projectOwner).balance;
 
-    // Debugging the allowance before attempting withdrawal
-    uint256 withdrawAmount = customPool.getWithdrawAmount();
-    console.log("Withdraw Amount: ", withdrawAmount);
-    console.log("Allowance Before: ", vToken.allowance(mockSlpxAddr, address(customPool)));
+        console.log("vToken address:", address(vToken));
+        console.log("customPool address:", address(customPool));
+        console.log("Project owner address:", projectOwner);
+        console.log("function address:", address(this));
+        console.log("slpx address:", mockSlpxAddr);
 
-    vm.prank(projectOwner); 
-    vToken.approve(mockSlpxAddr, withdrawAmount);
-    // Check allowance again after approval
-    console.log("Allowance After: ", vToken.allowance(mockSlpxAddr, address(customPool)));
+        vToken.approve(mockSlpxAddr, customPool.getWithdrawAmount());
 
-    // Now call the withdraw function
-    customPool.slpxWithdrawFund(); // Assuming slpxWithdrawFund sends Ether back
+        vm.prank(projectOwner); 
+        customPool.slpxWithdrawFund();
 
-    // Assert that the balance has changed
-    assert(poBal != address(projectOwner).balance);
+        uint256 poBalAfter = address(projectOwner).balance;
+        assert(poBalAfter > poBalBefore); 
 
-    // Reset the timestamp
-    vm.warp(rightNow);
-}
+        vm.warp(rightNow); 
+    }
 
 }
