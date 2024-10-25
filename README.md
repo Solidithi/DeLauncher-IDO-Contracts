@@ -1,11 +1,15 @@
-# DEFROST LAUNCHER - A Decentralized Launchpad 🚀
+# ❄ DEFROST LAUNCHER - A Decentralized Launchpad 🚀
 
 <h3 align="center">DEFROST LAUNCHER</h3>
 <p align="center">
-Defrost Launcher is an open-source platform for facilitating Initial DEX Offerings (IDOs) on decentralized exchanges.
+Defrost Launcher is a platform for facilitating Initial DEX Offerings (IDOs) on decentralized exchanges.
 </p>
 
-## About Defrost Launcher
+## About Defrost Launcher ❄
+
+<p align="center">
+  <img src="https://i.pinimg.com/736x/9b/25/85/9b2585e8d357db63f6900494ae65fd5c.jpg" alt="logo-white" width="120" height="120"/>
+</p>
 
 The name **Defrost Launcher** encapsulates our mission to "defrost" projects from a state of stagnation into active, thriving ventures following their fundraising efforts. In many cases, promising projects find themselves in a "frozen" state, unable to gain traction or connect with potential investors. 
 
@@ -13,7 +17,7 @@ The name **Defrost Launcher** encapsulates our mission to "defrost" projects fro
 
 Through this unique approach, we aim to create a vibrant ecosystem where innovative projects can flourish, ensuring they have the resources and support needed to succeed in the competitive blockchain landscape.
 
-## Features
+## Features ☕
 
 - **Decentralized Fundraising**: With Defrost Launcher, we facilitate seamless and secure Initial DEX Offerings (IDOs), allowing projects to raise funds directly from the community without intermediaries.
 
@@ -31,13 +35,31 @@ Through this unique approach, we aim to create a vibrant ecosystem where innovat
 
 - **Enhanced Security**: We prioritize security in our contract design, ensuring fairness for both project owners and investors. Funds raised in the project pool are only accessible to the owner after the designated project pool timeframe has concluded, at which point they can withdraw the vAssets raised. Investors receive their project tokens in return, guaranteeing a structured and secure transaction process that protects the interests of all parties involved.
 
-## Technologies Used
+## Technologies Used 💻
 
 - **Solidity**: The primary programming language for developing smart contracts on the Ethereum blockchain. Solidity enables the creation of secure and efficient contracts that power our IDO platform, ensuring reliable interactions between project owners and investors.
 
 - **Foundry**: A modern toolkit for Ethereum application development that provides powerful features for testing, deploying, and managing smart contracts. Foundry enhances our development process, allowing us to build robust solutions with speed and efficiency.
 
 - **Bifrost**: A cross-chain middleware protocol that facilitates seamless interactions between different blockchain networks. Bifrost's technology enhances our platform by enabling multi-chain support and the utilization of vAssets, allowing project owners and investors to leverage a diverse range of assets across various ecosystems.
+
+## Team Core 🎮
+
+1. **[notlongfen](https://github.com/notlongfen)**  
+   Full Stack & Blockchain Developer  
+   A dynamic developer with a deep focus on smart contracts and decentralized applications. Notlongfen is committed to building secure, scalable blockchain solutions that elevate user experience and ecosystem functionality.
+
+2. **[ducmint864](https://github.com/ducmint864)**  
+   Full Stack & Blockchain Developer  
+   Specializing in seamless front-end and back-end integration, Ducmint864 crafts efficient and user-centric applications. Their approach ensures that complex blockchain interactions are accessible, intuitive, and responsive for all users.
+
+3. **[nguyenkhanh0209](https://github.com/nguyenkhanh0209)**  
+   Full Stack & Blockchain Developer  
+   With expertise in end-to-end application development and data integrity, NguyenKhanh0209 focuses on building reliable, scalable architectures. Their contributions ensure our platform's backend remains robust, secure, and capable of supporting our decentralized projects.
+
+4. **[Trong-tra](https://github.com/Trong-tra)**  
+   Full Stack & Blockchain Developer  
+   A strategic thinker with a keen eye on cross-chain compatibility and decentralized finance applications. Trong-tra leverages deep technical knowledge to drive the platform’s growth, ensuring seamless blockchain interactions across networks.
 
 ## Learn more
 - [Bifrost](https://bifrost.io)
@@ -46,3 +68,7 @@ Through this unique approach, we aim to create a vibrant ecosystem where innovat
 - [Parachains](https://parachains.info)
 - [Foundry Installation](https://getfoundry.sh/)
 - [Foundry Documentation](https://book.getfoundry.sh)
+
+---
+
+Made with ❤️ by Defrost Launcher Team
