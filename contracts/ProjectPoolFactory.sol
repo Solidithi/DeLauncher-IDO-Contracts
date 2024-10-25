@@ -94,7 +94,7 @@ contract ProjectPoolFactory is Ownable {
     }
 
     modifier validProjectId(uint256 projectId) {
-        if (projectId > currentProjectId || projectId <= 0) {
+        if (projectId >= currentProjectId || projectId <= 0) {
             revert InvalidProjectId();
         }
         _;
