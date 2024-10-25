@@ -174,6 +174,8 @@ interface IProjectPool {
 
 	function getProjectEndTime() external view returns (uint256);
 
+	function getProjectSoftCapReached() external view returns (bool);
+
     /**
      * @notice Allows the project owner to withdraw funds after the project has ended.
      */
