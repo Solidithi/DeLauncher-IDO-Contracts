@@ -294,16 +294,16 @@ contract ProjectPool is Ownable, ReentrancyGuard {
 
         hasWithdrawn = true;
 
-        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, payable(_msgSender()));
+        slpxContract.redeemAsset(projectDetail.acceptedVAsset, withdrawAmount, payable(getProjectOwner()));
 
         emit ProjectWithdrawn(
-            _msgSender(),
+            getProjectOwner(),
             projectDetail.projectId,
             withdrawAmount
         );
     }
-    receive() external payable {}
-    fallback() external payable {}
+    // receive() external payable {}
+    // fallback() external payable {}
 
     function investProject(
         uint256 amount

@@ -35,6 +35,9 @@ contract MockSLPX {
         bool success = vToken.transferFrom(msg.sender, address(this), amount);
         require(success, "Token transfer failed");
 
+        console.log("Receiver address:", receiver); 
+        console.log("Contract balance:", address(this).balance);
+
         (bool sent, ) = receiver.call{value: amount}("");
         require(sent, "Failed to send native tokens");
     }

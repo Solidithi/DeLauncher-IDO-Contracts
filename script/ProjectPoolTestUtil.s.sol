@@ -77,7 +77,7 @@ contract ProjectPoolTestUtil is Script {
             rewardRate,
             acceptedVAsset
         );
-		address payable poolAddress = factory.getProjectPoolAddress(projectId);
+		address poolAddress = factory.getProjectPoolAddress(projectId);
 		return ProjectPool(poolAddress);
     }
 
